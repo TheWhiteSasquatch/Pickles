@@ -199,6 +199,6 @@ This project is open source and available under the MIT License.
 
 **Ready to patrol some streams? Click that pickle logo and let the monitoring begin!** 🚔🥒📺
 
-*Version 1.0.3 - Chat functionality restored!* ✨
+*Version 1.0.4 - Auto-update system fully configured!* ✨
 
 **📍 Official Home**: [GitHub Repository](https://github.com/TheWhiteSasquatch/Pickles)
