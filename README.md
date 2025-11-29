@@ -54,34 +54,26 @@ A fun, cartoonish userscript that monitors Kick.com live streams with a pickle s
 - **Modern Browser**: Chrome, Firefox, Edge, or Safari
 - **Userscript Manager**: [Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo), Greasemonkey, or Violentmonkey
 
-### 🥇 Official Installation (Recommended)
-**Get automatic updates from Greasy Fork!**
+### 🥇 Installation (Recommended)
+**Get automatic updates directly from GitHub!**
 
-#### Quick Install from Greasy Fork
+#### Quick Install from GitHub
 1. **Install Tampermonkey** (or Greasemonkey/Violentmonkey) for your browser
-2. **Click here to install**: [Pickle Patrol Stream Monitor on Greasy Fork](https://greasyfork.org/en/scripts/557261-pickle-patrol-stream-monitor)
-3. **Click "Install this script"** on Greasy Fork
-4. **Confirm installation** when prompted by your userscript manager
-5. **Visit any website** - you'll see the pickle logo in the top-right corner!
+2. Copy this URL: `https://raw.githubusercontent.com/TheWhiteSasquatch/Pickles/main/Kick_Stream_Monitor.user.js`
+3. Open your userscript manager dashboard
+4. Click "Add a new script" → "Install from URL"
+5. Paste the GitHub raw URL and click "Install"
+6. Enable the script
+7. **Visit any website** - you'll see the pickle logo in the top-right corner!
 
 ## 🔄 Automatic Updates
 
-**Greasy Fork provides automatic updates!** 🎉
+**GitHub provides automatic updates!** 🎉
 
-- **Check Frequency**: Greasy Fork checks for updates every 24 hours
+- **Check Frequency**: Your userscript manager checks for updates automatically
 - **One-Click Updates**: New versions install automatically
-- **Version History**: See all changes and update notes
-- **Reliable Hosting**: Script hosted on Greasy Fork's CDN
-
-**Manual Installation Note**: If you install manually, you'll need to update manually. Greasy Fork is recommended for the best experience!
-
-### Alternative: Manual Install from GitHub
-If you prefer manual installation with automatic updates:
-1. Copy this URL: `https://raw.githubusercontent.com/TheWhiteSasquatch/Pickles/main/Kick_Stream_Monitor.user.js`
-2. Open your userscript manager dashboard (Tampermonkey, etc.)
-3. Click "Add a new script" → "Install from URL"
-4. Paste the GitHub raw URL and click "Install"
-5. Enable the script
+- **Version History**: See all changes in the repository
+- **Direct Source**: Updates come directly from the original source
 
 **GitHub Auto-Updates**: This installation method provides automatic updates! Your userscript manager will check for new versions and install them automatically.
 
@@ -199,7 +191,7 @@ This project is open source and available under the MIT License.
 ## 🙏 Credits
 
 - **Created by**: Pickle Sheriff AI Assistant 🥒🤖
-- **Published on**: [Greasy Fork](https://greasyfork.org/en/scripts/557261-pickle-patrol-stream-monitor)
+- **Published on**: [GitHub](https://github.com/TheWhiteSasquatch/Pickles)
 - **Inspired by**: The need for better stream monitoring tools
 - **Special Thanks**: To all the streamers and the Kick community!
 
@@ -209,4 +201,4 @@ This project is open source and available under the MIT License.
 
 *Version 1.0.3 - Chat functionality restored!* ✨
 
-**📍 Official Home**: [Greasy Fork Page](https://greasyfork.org/en/scripts/557261-pickle-patrol-stream-monitor)
+**📍 Official Home**: [GitHub Repository](https://github.com/TheWhiteSasquatch/Pickles)
