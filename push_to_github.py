@@ -78,20 +78,20 @@ def main():
 
     # Push to GitHub
     print("⬆️  Pushing to GitHub...")
+
+    # Check current branch name
+    current_branch, _ = run_command("git branch --show-current")
+    if not current_branch:
+        current_branch = "master"  # fallback
+
     try:
-        run_command("git push -u origin main")
+        run_command(f"git push -u origin {current_branch}")
         print("✅ Successfully pushed to GitHub!")
     except SystemExit:
-        # Try pushing to master branch if main doesn't exist
-        print("⚠️  Main branch doesn't exist, trying master...")
-        try:
-            run_command("git push -u origin master")
-            print("✅ Successfully pushed to GitHub!")
-        except SystemExit:
-            print("❌ Failed to push. You might need to:")
-            print("   1. Set up authentication (personal access token or SSH key)")
-            print("   2. Create the repository on GitHub first")
-            print("   3. Check your internet connection")
+        print("❌ Failed to push. You might need to:")
+        print("   1. Set up authentication (personal access token or SSH key)")
+        print("   2. Create the repository on GitHub first")
+        print("   3. Check your internet connection")
 
 if __name__ == "__main__":
     # Change to the script's directory to work with local files
