@@ -116,6 +116,12 @@
             // Mark as initialized
             window.ksmInitialized = true;
 
+            // Check Content Security Policy - this can block iframes on strict sites
+            const cspIssues = this.checkCSPCompatibility();
+            if (cspIssues.length > 0) {
+                console.warn('🥒 Pickle Patrol CSP Warning:', cspIssues);
+            }
+
             // Check if this is a Kick.com page - only run full monitoring here
             const isKickPage = window.location.hostname.includes('kick.com');
 
@@ -134,6 +140,10 @@
             } else {
                 // Limited functionality on other sites (just GUI for cross-site access)
                 console.log('🥒 Running off-duty on non-Kick site - Pickle GUI only, no auto-patrolling');
+
+                // Store CSP issues for status display
+                this.cspIssues = cspIssues;
+
                 // User can still manually toggle grid and use settings
             }
 
@@ -149,6 +159,59 @@
 
             // Set up keyboard shortcuts
             this.setupKeyboardShortcuts();
+        }
+
+        /**
+         * Check Content Security Policy compatibility
+         */
+        checkCSPCompatibility() {
+            const issues = [];
+
+            try {
+                // Check for CSP meta tag
+                const cspMeta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+                if (cspMeta) {
+                    const cspContent = cspMeta.getAttribute('content');
+                    if (cspContent) {
+                        // Check for frame-src restrictions
+                        if (cspContent.includes('frame-src') && !cspContent.includes('player.kick.com')) {
+                            issues.push('CSP frame-src restrictions may block Kick player iframes');
+                        }
+                        // Check for default-src restrictions
+                        if (cspContent.includes('default-src') && cspContent.includes("'self'") && !cspContent.includes('player.kick.com')) {
+                            issues.push('CSP default-src restrictions may block external content');
+                        }
+                        // Check for script-src restrictions that might affect our functionality
+                        if (cspContent.includes('script-src') && !cspContent.includes("'unsafe-inline'")) {
+                            issues.push('CSP script-src restrictions detected - may limit functionality');
+                        }
+                    }
+                }
+
+                // Try to create a test iframe to check if iframes are allowed
+                const testIframe = document.createElement('iframe');
+                testIframe.src = 'about:blank';
+                testIframe.style.display = 'none';
+                document.body.appendChild(testIframe);
+
+                // Remove test iframe after a brief moment
+                setTimeout(() => {
+                    if (testIframe.parentNode) {
+                        testIframe.parentNode.removeChild(testIframe);
+                    }
+                }, 100);
+
+            } catch (error) {
+                issues.push('CSP or iframe restrictions detected: ' + error.message);
+            }
+
+            // Check for X-Frame-Options (though this is usually handled by browsers)
+            const xFrameOptions = document.querySelector('meta[name="X-Frame-Options"]');
+            if (xFrameOptions) {
+                issues.push('X-Frame-Options detected - may prevent iframe embedding');
+            }
+
+            return issues;
         }
 
         /**
@@ -694,9 +757,15 @@
             const status = document.createElement('div');
             status.className = 'ksm-status';
             const isOnKick = window.location.hostname.includes('kick.com');
-            const statusText = isOnKick
+            let statusText = isOnKick
                 ? `Status: ${this.config.enabled ? 'On Duty' : 'Off Duty'} | Pickled streams: ${this.liveStreams.size}`
                 : `Status: Cross-site Patrol | Pickled streams: ${this.liveStreams.size} | Use PICKLE GRID button`;
+
+            // Add CSP warning if applicable
+            if (!isOnKick && this.cspIssues && this.cspIssues.length > 0) {
+                statusText += '\n⚠️ Content Security Policy may block stream iframes on this site';
+            }
+
             status.textContent = statusText;
             status.id = 'ksm-status';
             statusSection.appendChild(status);
@@ -1877,7 +1946,17 @@
             };
 
             iframe.onerror = () => {
-                console.error(`Iframe failed to load for ${channel}`);
+                console.error(`Iframe failed to load for ${channel} - likely CSP blocked`);
+                // Show error message to user
+                playerElement.innerHTML = `
+                    <div style="color: #ff6b6b; text-align: center; padding: 20px;">
+                        <div>🚫 Stream blocked by site security</div>
+                        <div style="font-size: 12px; margin-top: 10px;">
+                            This website's security policy prevents embedding streams.<br>
+                            Try opening <a href="https://kick.com/${channel}" target="_blank" style="color: #53fc18;">kick.com/${channel}</a> in a new tab.
+                        </div>
+                    </div>
+                `;
             };
 
             // Ensure iframe is visible initially
@@ -1903,6 +1982,11 @@
                         statusText += ' | Monitoring active';
                     } else {
                         statusText += ' | Click logo to start monitoring';
+                    }
+
+                    // Add CSP warning for cross-site usage
+                    if (this.cspIssues && this.cspIssues.length > 0) {
+                        statusText += ' ⚠️ CSP restrictions may limit functionality';
                     }
                 }
 

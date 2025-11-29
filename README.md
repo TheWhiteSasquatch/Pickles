@@ -160,6 +160,12 @@ If you prefer manual installation with automatic updates:
 - Monitoring only runs when activated
 - Try reducing the poll interval in settings
 
+**CSP/Security blocking streams?**
+- Some websites (ESPN, news sites, corporate portals) have strict security policies
+- The script will show "⚠️ CSP restrictions may limit functionality" in the status
+- When streams fail to load, click the provided link to open in a new tab
+- This is normal behavior - the website is protecting itself from security risks
+
 ### Browser Compatibility
 - ✅ Chrome 80+
 - ✅ Firefox 75+
@@ -170,6 +176,7 @@ If you prefer manual installation with automatic updates:
 - Cross-origin restrictions prevent direct audio control
 - Screenshot functionality requires html2canvas library
 - Some corporate networks may block Kick.com APIs
+- **Content Security Policy (CSP)**: Strict websites like ESPN, news sites, or corporate portals may block stream iframes. The script will show warnings and provide alternative access methods.
 
 ## 🔒 Privacy & Security
 
