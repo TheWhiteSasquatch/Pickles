@@ -2,6 +2,20 @@
 
 > The Dilly-est Way to Monitor Kick.com Streams!
 
+## ⚠️ Important Disclaimer
+
+**This is NOT an actual pickle scanner or restaurant finder!** 🥒❌
+
+This is a themed userscript for monitoring live streams on Kick.com. The "pickle" theme is purely decorative and fun - it has absolutely nothing to do with:
+- Finding pickle restaurants
+- Scanning for pickles
+- Food delivery services
+- Any real-world pickle-related functionality
+
+It's just a cute, cartoonish interface for stream monitoring with pickle sheriff branding!
+
+---
+
 A fun, cartoonish userscript that monitors Kick.com live streams with a pickle sheriff theme. Keep track of your favorite streamers with an adorable interface that only activates when you need it!
 
 ![Pickle Sheriff Logo](image%20(20).jpg)

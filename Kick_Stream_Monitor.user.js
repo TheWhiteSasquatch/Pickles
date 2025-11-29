@@ -5,6 +5,8 @@
 // @description  Keep an eye on Kick.com streams with the Pickle Patrol - dynamic grid display and embedded chat!
 // @author       Pickle Sheriff AI
 // @match        *://*/*
+// @updateURL    https://raw.githubusercontent.com/TheWhiteSasquatch/Pickles/main/Kick_Stream_Monitor.user.js
+// @downloadURL  https://raw.githubusercontent.com/TheWhiteSasquatch/Pickles/main/Kick_Stream_Monitor.user.js
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
 // @grant        GM_getValue
