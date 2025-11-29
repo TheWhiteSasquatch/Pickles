@@ -688,6 +688,34 @@
                     text-align: center;
                 }
 
+                .ksm-notification-bubble {
+                    position: absolute;
+                    background: linear-gradient(135deg, rgba(83, 252, 24, 0.95), rgba(74, 222, 23, 0.95));
+                    color: black;
+                    padding: 8px 12px;
+                    border-radius: 20px;
+                    font-size: 12px;
+                    font-weight: bold;
+                    box-shadow: 0 4px 12px rgba(83, 252, 24, 0.3);
+                    border: 2px solid #53fc18;
+                    z-index: 10001;
+                    opacity: 0;
+                    transform: translateY(-10px);
+                    transition: all 0.3s ease;
+                    pointer-events: none;
+                    white-space: nowrap;
+                }
+
+                .ksm-notification-bubble.show {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+
+                .ksm-notification-bubble.fade-out {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+
                 .ksm-loading {
                     display: inline-block;
                     width: 20px;
@@ -739,7 +767,14 @@
                     console.log('🥒 Creating pickle grid for off-duty patrol');
                     this.createGrid();
                 }
-                this.toggleGrid();
+
+                // Check if we have live streams
+                if (this.liveStreams.size > 0) {
+                    this.toggleGrid();
+                } else {
+                    // No live streams - show subtle notification instead of overlay
+                    this.showNoStreamsNotification(gridButton);
+                }
             };
 
             // Add buttons to container
@@ -1000,14 +1035,49 @@
                 show = !this.grid.container.classList.contains('active');
             }
 
+            // Only show grid if there are live streams
             if (show && this.liveStreams.size > 0) {
-                this.grid.container.classList.add('active');
-            } else if (show) {
-                // Show grid even with no streams if explicitly requested
                 this.grid.container.classList.add('active');
             } else {
                 this.grid.container.classList.remove('active');
             }
+        }
+
+        /**
+         * Show a subtle notification when no streams are live
+         */
+        showNoStreamsNotification(buttonElement) {
+            // Remove any existing notification
+            const existingBubble = document.querySelector('.ksm-notification-bubble');
+            if (existingBubble) {
+                existingBubble.remove();
+            }
+
+            // Create notification bubble
+            const bubble = document.createElement('div');
+            bubble.className = 'ksm-notification-bubble';
+            bubble.textContent = '🥒 No live streams - monitoring channels...';
+
+            // Position it near the button
+            const buttonRect = buttonElement.getBoundingClientRect();
+            bubble.style.left = (buttonRect.left + buttonRect.width / 2) + 'px';
+            bubble.style.top = (buttonRect.top - 40) + 'px';
+
+            // Add to page
+            document.body.appendChild(bubble);
+
+            // Show with animation
+            setTimeout(() => bubble.classList.add('show'), 10);
+
+            // Hide after 3 seconds
+            setTimeout(() => {
+                bubble.classList.add('fade-out');
+                setTimeout(() => {
+                    if (bubble.parentNode) {
+                        bubble.parentNode.removeChild(bubble);
+                    }
+                }, 300);
+            }, 3000);
         }
 
         /**
