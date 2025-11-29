@@ -75,15 +75,15 @@ A fun, cartoonish userscript that monitors Kick.com live streams with a pickle s
 
 **Manual Installation Note**: If you install manually, you'll need to update manually. Greasy Fork is recommended for the best experience!
 
-### Alternative: Manual Install
-If you prefer manual installation:
-1. Copy the entire `Kick_Stream_Monitor.user.js` file contents
+### Alternative: Manual Install from GitHub
+If you prefer manual installation with automatic updates:
+1. Copy this URL: `https://raw.githubusercontent.com/TheWhiteSasquatch/Pickles/main/Kick_Stream_Monitor.user.js`
 2. Open your userscript manager dashboard (Tampermonkey, etc.)
-3. Click "Add a new script"
-4. Paste the code and save
+3. Click "Add a new script" → "Install from URL"
+4. Paste the GitHub raw URL and click "Install"
 5. Enable the script
 
-**Note**: Manual installation won't provide automatic updates. Use Greasy Fork for the best experience!
+**GitHub Auto-Updates**: This installation method provides automatic updates! Your userscript manager will check for new versions and install them automatically.
 
 ## 🎮 Usage Guide
 
