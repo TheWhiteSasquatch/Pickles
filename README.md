@@ -104,9 +104,10 @@ Think of it as a "pickle sheriff" who completely transforms how you watch Kick s
 4. **Click "🥒"** - this opens settings to change things
 
 ### Watching Videos:
-- **Grid Layout**: Videos appear in a nice organized grid
-- **Auto-Size**: The grid adjusts automatically to your screen
-- **Resize Grid**: Click and drag the bottom-right corner to resize the entire grid
+- **Smart Grid Layout**: Videos automatically arrange in optimal columns based on your screen size
+- **Responsive Sizing**: Grid adapts perfectly to different numbers of streams (1-6+ videos)
+- **Resize Grid**: Click and drag corners/edges to adjust grid size
+- **Equal Height Videos**: All videos maintain consistent sizing and aspect ratios
 - **Close Videos**: Click the ✕ button on any video to remove it
 - **Sound Toggle**: Turn on/off the "ding" sound when streams start
 
