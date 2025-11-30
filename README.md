@@ -135,7 +135,7 @@ Think of it as a "pickle sheriff" who completely transforms how you watch Kick s
 - **Grid Columns**: How many columns of videos you want (1-4)
 
 ### Sound Settings:
-- **Ding Sound**: Turn on/off the sound that plays when someone goes live
+- **Ding Sound**: Turn on/off the sound that plays when someone goes live (may require clicking to enable on some sites)
 
 ### Channel Settings:
 - **Live List**: Shows which channels are currently streaming (green dots)
@@ -173,7 +173,8 @@ Think of it as a "pickle sheriff" who completely transforms how you watch Kick s
 
 
 ### Sound Not Working?
-- **Some websites don't allow sounds** for security
+- **Some websites don't allow sounds** for security (autoplay blocked)
+- **Click the red "Audio Blocked" notification** when it appears to enable sounds
 - **Check your browser sound settings**
 - **Turn sound on/off** in the pickle settings
 
