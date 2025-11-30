@@ -168,6 +168,7 @@
 
             // Make debug function globally available
             window.ksmDebugConfig = () => this.debugConfig();
+        }
 
         /**
          * Update chat widths for all existing streams
@@ -177,7 +178,6 @@
             chatElements.forEach(chat => {
                 chat.style.width = this.config.chatWidth + 'px';
             });
-        }
         }
 
         /**
