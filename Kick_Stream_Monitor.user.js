@@ -543,37 +543,6 @@
                     background: #cc3333;
                 }
 
-                .ksm-add-channel {
-                    display: flex;
-                    margin-top: 4px;
-                    gap: 6px;
-                }
-
-                .ksm-add-channel input {
-                    flex-grow: 1;
-                }
-
-                .ksm-add-channel button {
-                    background: linear-gradient(45deg, #53fc18, #4ade17);
-                    color: black;
-                    border: none;
-                    padding: 6px 12px;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    font-weight: bold;
-                    font-size: 13px;
-                    text-transform: uppercase;
-                    letter-spacing: 1px;
-                    transition: all 0.3s ease;
-                    box-shadow: 0 3px 6px rgba(83, 252, 24, 0.3);
-                }
-
-                .ksm-add-channel button:hover {
-                    background: linear-gradient(45deg, #4ade17, #3bc514);
-                    transform: translateY(-1px);
-                    box-shadow: 0 5px 10px rgba(83, 252, 24, 0.4);
-                }
-
                 .ksm-status {
                     padding: 8px;
                     background: linear-gradient(135deg, rgba(83, 252, 24, 0.1), rgba(74, 222, 23, 0.15));
@@ -1015,15 +984,6 @@
             this.updateChannelList(channelList);
             channelSection.appendChild(channelList);
 
-            // Add channel form
-            const addChannelForm = document.createElement('div');
-            addChannelForm.className = 'ksm-add-channel';
-            addChannelForm.innerHTML = `
-                <input type="text" id="ksm-new-channel" placeholder="Enter channel name" maxlength="50">
-                <button id="ksm-add-channel-btn">Add</button>
-            `;
-            channelSection.appendChild(addChannelForm);
-
             // Actions section
             const actionsSection = document.createElement('div');
             actionsSection.className = 'ksm-section';
@@ -1285,29 +1245,6 @@
             soundToggle.onchange = (e) => {
                 this.config.soundEnabled = e.target.checked;
                 this.saveConfig();
-            };
-
-            // Channel management
-            const addChannelBtn = panel.querySelector('#ksm-add-channel-btn');
-            const newChannelInput = panel.querySelector('#ksm-new-channel');
-
-            addChannelBtn.onclick = () => {
-                const channelName = newChannelInput.value.trim().toLowerCase();
-                if (channelName && !this.config.monitoredChannels.includes(channelName)) {
-                    this.config.monitoredChannels.push(channelName);
-                    this.saveConfig();
-                    this.updateChannelList();
-                    this.updateLiveChannelList();
-                    // Check the new channel immediately
-                    this.checkChannelStatus(channelName);
-                    newChannelInput.value = '';
-                }
-            };
-
-            newChannelInput.onkeypress = (e) => {
-                if (e.key === 'Enter') {
-                    addChannelBtn.click();
-                }
             };
 
             // Actions
