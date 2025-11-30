@@ -729,6 +729,46 @@
                 @keyframes ksm-spin {
                     to { transform: rotate(360deg); }
                 }
+
+                /* Pickle Rain Animation */
+                .ksm-pickle-rain {
+                    position: fixed;
+                    top: -50px;
+                    z-index: 10001;
+                    pointer-events: none;
+                    font-size: 32px;
+                    animation: ksm-pickle-fall linear infinite;
+                    opacity: 0.8;
+                }
+
+                .ksm-pickle-rain.dill { animation-duration: 3s; }
+                .ksm-pickle-rain.sweet { animation-duration: 4s; }
+                .ksm-pickle-rain.sour { animation-duration: 2.5s; }
+                .ksm-pickle-rain.gherkin { animation-duration: 3.5s; }
+
+                .ksm-pickle-rain.dill { left: 10%; animation-delay: 0s; }
+                .ksm-pickle-rain.sweet { left: 25%; animation-delay: 0.5s; }
+                .ksm-pickle-rain.sour { left: 40%; animation-delay: 1s; }
+                .ksm-pickle-rain.gherkin { left: 55%; animation-delay: 1.5s; }
+                .ksm-pickle-rain.cucumber { left: 70%; animation-delay: 2s; }
+                .ksm-pickle-rain.jar { left: 85%; animation-delay: 2.5s; }
+
+                @keyframes ksm-pickle-fall {
+                    0% {
+                        transform: translateY(-50px) rotate(0deg) scale(1);
+                        opacity: 0.8;
+                    }
+                    10% {
+                        opacity: 1;
+                    }
+                    90% {
+                        opacity: 1;
+                    }
+                    100% {
+                        transform: translateY(calc(100vh + 50px)) rotate(360deg) scale(0.5);
+                        opacity: 0;
+                    }
+                }
             `);
 
             // Create container
@@ -1785,12 +1825,13 @@
          */
         handleChannelStatus(channel, isLive) {
             const wasLive = this.liveStreams.has(channel);
+            const wasEmpty = this.liveStreams.size === 0;
 
             if (isLive && !wasLive) {
                 // Channel went live
                 console.log(`${channel} is now live!`);
                 this.liveStreams.add(channel);
-                this.onStreamLive(channel);
+                this.onStreamLive(channel, wasEmpty);
             } else if (!isLive && wasLive) {
                 // Channel went offline
                 console.log(`${channel} is now offline`);
@@ -1802,7 +1843,7 @@
         /**
          * Handle stream going live
          */
-        onStreamLive(channel) {
+        onStreamLive(channel, wasEmpty = false) {
             console.log(`Adding ${channel} to grid`);
 
             // Double-check that this channel is actually in our live streams set
@@ -1839,6 +1880,11 @@
 
             // Show grid if hidden
             this.toggleGrid(true);
+
+            // Trigger pickle rain if this was the first stream after being empty
+            if (wasEmpty) {
+                this.triggerPickleRain();
+            }
         }
 
         /**
@@ -2032,6 +2078,93 @@
             // Ensure iframe is visible initially
             iframe.style.opacity = '1';
             iframe.style.visibility = 'visible';
+        }
+
+        /**
+         * Trigger pickle rain animation when first stream goes live
+         */
+        triggerPickleRain() {
+            console.log('🥒 PICKLE RAIN! First stream detected - time to celebrate!');
+
+            const pickleTypes = ['🥒', '🥒', '🥒', '🥒', '🥒', '🥒'];
+            const pickleClasses = ['dill', 'sweet', 'sour', 'gherkin', 'cucumber', 'jar'];
+
+            // Create 6 falling pickles with different timing
+            for (let i = 0; i < 6; i++) {
+                setTimeout(() => {
+                    const pickle = document.createElement('div');
+                    pickle.className = `ksm-pickle-rain ${pickleClasses[i]}`;
+                    pickle.textContent = pickleTypes[i];
+
+                    // Add some random horizontal variation
+                    const randomOffset = (Math.random() - 0.5) * 100; // -50px to +50px
+                    pickle.style.left = `calc(${10 + i * 15}% + ${randomOffset}px)`;
+
+                    document.body.appendChild(pickle);
+
+                    // Remove pickle after animation completes (5 seconds max)
+                    setTimeout(() => {
+                        if (pickle.parentNode) {
+                            pickle.parentNode.removeChild(pickle);
+                        }
+                    }, 5000);
+                }, i * 200); // Stagger the drops
+            }
+
+            // Show a celebration message
+            this.showPickleRainNotification();
+        }
+
+        /**
+         * Show a celebration notification for pickle rain
+         */
+        showPickleRainNotification() {
+            // Remove any existing celebration
+            const existingCelebration = document.querySelector('.ksm-celebration-bubble');
+            if (existingCelebration) {
+                existingCelebration.remove();
+            }
+
+            // Create celebration bubble
+            const celebration = document.createElement('div');
+            celebration.className = 'ksm-celebration-bubble';
+            celebration.innerHTML = `
+                <div style="text-align: center; font-size: 24px; margin-bottom: 10px;">
+                    🎉 🥒 PICKLE RAIN! 🥒 🎉
+                </div>
+                <div style="text-align: center; font-size: 14px;">
+                    Someone went live! Time to get pickled!
+                </div>
+            `;
+
+            // Position in center of screen
+            celebration.style.position = 'fixed';
+            celebration.style.top = '50%';
+            celebration.style.left = '50%';
+            celebration.style.transform = 'translate(-50%, -50%)';
+            celebration.style.zIndex = '10002';
+            celebration.style.pointerEvents = 'none';
+            celebration.style.opacity = '0';
+            celebration.style.transition = 'all 0.5s ease';
+
+            document.body.appendChild(celebration);
+
+            // Animate in
+            setTimeout(() => {
+                celebration.style.opacity = '1';
+                celebration.style.transform = 'translate(-50%, -50%) scale(1.1)';
+            }, 10);
+
+            // Animate out after 3 seconds
+            setTimeout(() => {
+                celebration.style.opacity = '0';
+                celebration.style.transform = 'translate(-50%, -50%) scale(0.9)';
+                setTimeout(() => {
+                    if (celebration.parentNode) {
+                        celebration.parentNode.removeChild(celebration);
+                    }
+                }, 500);
+            }, 3000);
         }
 
         /**
