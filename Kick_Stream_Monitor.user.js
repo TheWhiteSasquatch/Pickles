@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pickle Patrol Stream Monitor
 // @namespace    https://kick.com/
-// @version      1.0.8
+// @version      1.0.9
 // @description  Keep an eye on Kick.com streams with the Pickle Patrol - dynamic grid display and embedded chat!
 // @author       Pickle Sheriff AI
 // @match        *://*/*
@@ -67,7 +67,8 @@
         gridRows: 2,
         maxStreams: 2, // Suggested default (2 streams), no actual limit
         showChat: true,
-        theme: 'dark'
+        theme: 'dark',
+        soundEnabled: true
     };
 
     // Main application class - The Pickle Patrol!
@@ -864,6 +865,10 @@
                     <input type="checkbox" id="ksm-enabled" ${this.config.enabled ? 'checked' : ''}>
                     Enable Pickle Patrol
                 </label>
+                <label class="ksm-toggle">
+                    <input type="checkbox" id="ksm-sound-enabled" ${this.config.soundEnabled ? 'checked' : ''}>
+                    🔊 Sound Notifications
+                </label>
                 <div class="ksm-input-group">
                     <label for="ksm-poll-interval">Poll Interval (seconds):</label>
                     <input type="number" id="ksm-poll-interval" min="10" max="300" value="${this.config.pollInterval / 1000}">
@@ -961,7 +966,7 @@
                     <div><b>Escape:</b> Close panel/pickle grid</div>
                 </div>
                 <div style="margin-top: 8px; font-size: 11px; color: #888;">
-                    Version 1.0.0 | Click buttons to control the pickle patrol!
+                    Version 1.0.1 | 🎵 Sound notifications + 🔊 toggle | Click buttons to control the pickle patrol!
                 </div>
             `;
 
@@ -1184,6 +1189,12 @@
             const showChatToggle = panel.querySelector('#ksm-show-chat');
             showChatToggle.onchange = (e) => {
                 this.config.showChat = e.target.checked;
+                this.saveConfig();
+            };
+
+            const soundToggle = panel.querySelector('#ksm-sound-enabled');
+            soundToggle.onchange = (e) => {
+                this.config.soundEnabled = e.target.checked;
                 this.saveConfig();
             };
 
@@ -1908,6 +1919,9 @@
             // Show grid if hidden
             this.toggleGrid(true);
 
+            // Play sound notification for every stream going live
+            this.playSoundNotification();
+
             // Trigger pickle rain if this was the first stream after being empty
             if (wasEmpty) {
                 this.triggerPickleRain();
@@ -2154,6 +2168,24 @@
 
             // Show a celebration message
             this.showPickleRainNotification();
+        }
+
+        /**
+         * Play sound notification when someone goes live
+         */
+        playSoundNotification() {
+            if (!this.config.soundEnabled) return;
+
+            try {
+                const audio = new Audio('https://raw.githubusercontent.com/TheWhiteSasquatch/Pickles/refs/heads/master/incoming.mp3');
+                audio.volume = 0.7; // Set volume to 70% to not be too loud
+                audio.play().catch(error => {
+                    console.log('🥒 Sound notification failed to play:', error);
+                    // This is expected on many sites due to autoplay policies
+                });
+            } catch (error) {
+                console.log('🥒 Sound notification error:', error);
+            }
         }
 
         /**
