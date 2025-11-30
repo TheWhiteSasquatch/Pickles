@@ -53,6 +53,7 @@ Think of it as a "pickle sheriff" who completely transforms how you watch Kick s
 - **⚙️ Settings**: Change how often it checks, how wide the chat is, sound on/off
 - **🎯 Resize Chat**: Make chat wider or thinner to hide annoying pinned messages
 - **📏 Resize Grid**: Click and drag the bottom-right corner to resize the entire video grid
+- **🔄 Smart GUI**: Pickle button automatically moves to avoid being covered by the grid
 - **📸 Screenshots**: Take pictures of streams (use Ctrl+Shift+S)
 - **⌨️ Shortcuts**: Quick keyboard buttons for common actions
 
@@ -97,7 +98,7 @@ Think of it as a "pickle sheriff" who completely transforms how you watch Kick s
 ## 🎮 HOW TO USE YOUR PICKLE
 
 ### Getting Started:
-1. **Find the pickle** 🥒 in the top-right corner of any website
+1. **Find the pickle** 🥒 in the top-right corner of any website (moves automatically if grid covers it!)
 2. **Click the pickle logo** - it will show you buttons
 3. **Click "🥒GRID"** - this shows you live video streams
 4. **Click "🥒"** - this opens settings to change things
