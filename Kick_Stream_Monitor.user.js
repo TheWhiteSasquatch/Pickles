@@ -600,6 +600,25 @@
                     z-index: 10000;
                 }
 
+                .ksm-grid-container::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    right: 0;
+                    bottom: 20px; /* Leave space for corner handle */
+                    width: 8px;
+                    background: linear-gradient(90deg, transparent 0%, rgba(76, 175, 80, 0.3) 50%, transparent 100%);
+                    cursor: ew-resize;
+                    pointer-events: auto;
+                    z-index: 10000;
+                    opacity: 0;
+                    transition: opacity 0.2s ease;
+                }
+
+                .ksm-grid-container:hover::before {
+                    opacity: 1;
+                }
+
                 .ksm-grid-container.active {
                     display: block;
                 }
