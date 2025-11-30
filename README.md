@@ -19,13 +19,22 @@ Think of it as a "pickle sheriff" who completely transforms how you watch Kick s
 ### **🚨 Interface Makeover Alert!**
 **This isn't just "watching Kick streams" - it completely transforms how you experience Kick.com!** Instead of using Kick's normal interface, you get a custom pickle-themed overlay with superpowers.
 
+### **⚠️ Website Compatibility Warning**
+**Not all websites work!** Some sites block browser extensions entirely. The pickle works best on:
+- ✅ **Kick.com** (primary target)
+- ✅ **Most social media sites**
+- ✅ **Personal blogs and forums**
+- ❌ **News websites** (often block extensions)
+- ❌ **Corporate/government sites** (strict security)
+- ❌ **Some work networks** (IT restrictions)
+
 ### Basic Stuff It Does:
 - **🥒 Pickle Logo**: A cute pickle button that appears in the corner of your screen
 - **🎥 Watch Videos**: Shows live streams from Kick.com in a nice grid layout
 - **🔇 Quiet Videos**: Videos start muted (no surprise loud sounds!)
 - **💬 Optional Chat**: Can show chat next to videos if you want
 - **🔄 Auto-Check**: Every 5 minutes, it checks if your favorite channels are live
-- **🌐 Works Everywhere**: You can use it on any website, not just Kick.com
+- **🌐 Cross-Site Compatible**: Works on most websites, but some block browser extensions
 
 ### Pickle Style Stuff:
 - **🚔 Sheriff Theme**: Everything looks like a cartoon pickle sheriff!
@@ -67,10 +76,12 @@ Think of it as a "pickle sheriff" who completely transforms how you watch Kick s
 4. Make sure the script is "Enabled" (should be checked automatically)
 
 #### Step 3: You're Done!
-1. **Go to any website** (like google.com or kick.com)
+1. **Go to a compatible website** (try kick.com first, or any social media site)
 2. Look in the **top-right corner** of your screen
 3. You should see a cute **pickle logo** 🥒
 4. **Click it** and you're ready to watch streams!
+
+**💡 Pro Tip**: If you don't see the pickle logo, try a different website - some sites block browser extensions!
 
 ## 🔄 AUTOMATIC UPDATES
 
@@ -100,7 +111,7 @@ Think of it as a "pickle sheriff" who completely transforms how you watch Kick s
 - **Smart Checking**: Every 5 minutes, it checks if your channels are live
 - **Battery Friendly**: Only checks when you're actively using it
 - **Auto-Channel Updates**: Channel list updates itself from the internet
-- **Works Anywhere**: Use it on any website, not just Kick.com
+- **Cross-Site Compatible**: Works on most websites (some block extensions)
 - **Custom Interface**: Replaces Kick's normal viewing experience with a pickle-themed grid system
 
 ### Managing Channels:
