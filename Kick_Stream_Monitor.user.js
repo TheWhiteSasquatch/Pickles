@@ -1166,8 +1166,15 @@
             // Only show grid if there are live streams
             if (show && this.liveStreams.size > 0) {
                 this.grid.container.classList.add('active');
+                // Update GUI position when grid is shown
+                setTimeout(() => this.updateGUIPosition(), 10);
             } else {
                 this.grid.container.classList.remove('active');
+                // Reset GUI to default position when grid is hidden
+                if (this.gui && this.gui.container) {
+                    this.gui.container.style.left = 'auto';
+                    this.gui.container.style.right = '20px';
+                }
             }
         }
 
@@ -2101,6 +2108,33 @@
         }
 
         /**
+         * Update GUI position based on grid location
+         */
+        updateGUIPosition() {
+            if (!this.gui || !this.gui.container || !this.grid || !this.grid.container) return;
+
+            const gridRect = this.grid.container.getBoundingClientRect();
+            const guiRect = this.gui.container.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+
+            // Check if grid covers the right side where GUI normally sits
+            const guiRightEdge = 20 + guiRect.width; // 20px margin + GUI width
+            const gridLeftEdge = gridRect.left;
+
+            // If grid extends to cover the GUI's normal position, move GUI to left
+            if (gridRect.left < guiRightEdge && gridRect.right > 20) {
+                this.gui.container.style.right = 'auto';
+                this.gui.container.style.left = '20px';
+                console.log('🥒 GUI moved to left side to avoid grid overlap');
+            } else {
+                // Reset to default right position
+                this.gui.container.style.left = 'auto';
+                this.gui.container.style.right = '20px';
+                console.log('🥒 GUI moved back to right side');
+            }
+        }
+
+        /**
          * Initialize resize functionality for the grid
          */
         initializeResize() {
@@ -2114,6 +2148,9 @@
                 if (this.streamContainers.size > 0) {
                     this.updateGridLayout();
                 }
+
+                // Check if grid overlaps with GUI button and reposition if needed
+                this.updateGUIPosition();
 
                 // Save new size to config
                 const rect = container.getBoundingClientRect();
