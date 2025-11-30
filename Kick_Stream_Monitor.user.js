@@ -765,6 +765,9 @@
                 .ksm-chat-content {
                     flex: 1;
                     background: #000;
+                    max-height: 400px; /* Reasonable max height */
+                    overflow-y: auto; /* Scroll when content exceeds height */
+                    overflow-x: hidden;
                 }
 
                 .ksm-no-streams {
@@ -2076,7 +2079,7 @@
 
                 const chatContent = document.createElement('div');
                 chatContent.className = 'ksm-chat-content';
-                chatContent.innerHTML = '<iframe src="" style="width: 100%; height: 100%; border: none;"></iframe>';
+                chatContent.innerHTML = '<iframe src="" style="width: 100%; height: 100%; border: none; min-height: 300px;"></iframe>';
 
                 chat.appendChild(chatHeader);
                 chat.appendChild(chatContent);
@@ -2131,6 +2134,9 @@
                 }
             }
 
+            // Update chat heights to match video containers
+            this.updateChatHeights();
+
             console.log(`Grid layout updated: ${streamCount} streams, responsive columns active`);
         }
 
@@ -2174,6 +2180,20 @@
             const thirtyMinutes = 30 * 60 * 1000; // 30 minutes in milliseconds
 
             return timeSinceLastEnabled <= thirtyMinutes;
+        }
+
+        /**
+         * Update chat container heights to match video containers
+         */
+        updateChatHeights() {
+            // Ensure chat containers match their video container heights
+            this.streamContainers.forEach((container, channel) => {
+                const chatContent = container.querySelector('.ksm-chat-content');
+                if (chatContent) {
+                    // Reset to natural flex behavior but maintain max-height constraint
+                    chatContent.style.maxHeight = '400px';
+                }
+            });
         }
 
         /**

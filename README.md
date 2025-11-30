@@ -51,7 +51,7 @@ Think of it as a "pickle sheriff" who completely transforms how you watch Kick s
 
 ### Extra Cool Features:
 - **⚙️ Settings**: Change how often it checks, how wide the chat is, sound on/off
-- **🎯 Resize Chat**: Make chat wider or thinner to hide annoying pinned messages
+- **🎯 Resize Chat**: Make chat wider or thinner to hide annoying pinned messages (auto-scrolls when long)
 - **📏 Resize Grid**: Click and drag corners/edges to resize (click outside grid to hide and browse normally)
 - **🔄 Smart GUI**: Pickle button automatically moves to avoid being covered by the grid
 - **📸 Screenshots**: Take pictures of streams (use Ctrl+Shift+S)
@@ -131,7 +131,7 @@ Think of it as a "pickle sheriff" who completely transforms how you watch Kick s
 - **Max Videos**: How many streams it can show at once
 
 ### Video & Chat Settings:
-- **Show Chat**: Turn on/off the chat box next to videos
+- **Show Chat**: Turn on/off the chat box next to videos (auto-scrolls, stays proportional to video)
 - **Grid Columns**: How many columns of videos you want (1-4)
 
 ### Sound Settings:
