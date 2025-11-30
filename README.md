@@ -34,7 +34,7 @@ Think of it as a "pickle sheriff" who completely transforms how you watch Kick s
 - **🔇 Quiet Videos**: Videos start muted (no surprise loud sounds!)
 - **💬 Optional Chat**: Can show chat next to videos if you want
 - **🔄 Auto-Check**: Every 5 minutes, it checks if your favorite channels are live
-- **🌐 Cross-Site Compatible**: Works on most websites (monitoring starts only when you click the logo)
+- **🌐 Cross-Site Compatible**: Works on most websites (auto-starts within 30min of last use, otherwise click logo)
 
 ### Pickle Style Stuff:
 - **🚔 Sheriff Theme**: Everything looks like a cartoon pickle sheriff!
@@ -115,7 +115,7 @@ Think of it as a "pickle sheriff" who completely transforms how you watch Kick s
 - **Smart Checking**: Every 5 minutes, it checks if your channels are live
 - **Battery Friendly**: Only checks when you're actively using it
 - **Auto-Channel Updates**: Channel list updates itself from the internet
-- **Cross-Site Compatible**: Works on most websites (some block extensions)
+- **Session Persistence**: Remembers your last session for 30 minutes across sites
 - **Custom Interface**: Replaces Kick's normal viewing experience with a pickle-themed grid system
 
 ### Managing Channels:

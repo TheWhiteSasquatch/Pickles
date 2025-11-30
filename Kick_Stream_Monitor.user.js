@@ -1596,6 +1596,10 @@
 
             console.log('Starting stream monitoring...');
 
+            // Save timestamp when monitoring was enabled
+            this.config.lastMonitoringEnabled = Date.now();
+            this.saveConfig();
+
             // Initial check
             this.checkStreams();
 
@@ -2155,6 +2159,21 @@
                 this.gui.container.style.right = '20px';
                 console.log('🥒 GUI moved back to right side');
             }
+        }
+
+        /**
+         * Check if monitoring should auto-start based on 30-minute window
+         */
+        shouldAutoStartMonitoring() {
+            if (!this.config.lastMonitoringEnabled) {
+                return false; // Never enabled before
+            }
+
+            const now = Date.now();
+            const timeSinceLastEnabled = now - this.config.lastMonitoringEnabled;
+            const thirtyMinutes = 30 * 60 * 1000; // 30 minutes in milliseconds
+
+            return timeSinceLastEnabled <= thirtyMinutes;
         }
 
         /**
