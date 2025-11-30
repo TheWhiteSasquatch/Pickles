@@ -131,20 +131,24 @@
             // Create GUI (always show on all sites for cross-site patrolling)
             this.createGUI();
 
+            // Always create grid container for cross-site patrolling
+            this.createGrid();
+
             if (isKickPage) {
                 // Full functionality on Kick.com pages - but wait for user interaction
                 console.log('🥒 Pickle Patrol ready on Kick.com - click logo to activate monitoring');
-
-                // Create grid container (but don't start monitoring yet)
-                this.createGrid();
             } else {
-                // Limited functionality on other sites (just GUI for cross-site access)
-                console.log('🥒 Running off-duty on non-Kick site - Pickle GUI only, no auto-patrolling');
+                // Cross-site functionality - start monitoring if enabled
+                console.log('🥒 Running cross-site patrol - monitoring active');
 
                 // Store CSP issues for status display
                 this.cspIssues = cspIssues;
 
-                // User can still manually toggle grid and use settings
+                // Auto-start monitoring if enabled (for cross-site persistence)
+                if (this.config.enabled) {
+                    console.log('🥒 Auto-starting monitoring on non-Kick site');
+                    this.startMonitoring();
+                }
             }
 
             // Set up page unload cleanup
@@ -242,6 +246,7 @@
                 const stored = GM_getValue(key);
                 config[key] = stored !== undefined ? stored : defaultValue;
             }
+            console.log('🥒 Loaded config:', config);
             return config;
         }
 
@@ -252,6 +257,7 @@
             for (const [key, value] of Object.entries(this.config)) {
                 GM_setValue(key, value);
             }
+            console.log('🥒 Saved config:', this.config);
         }
 
         /**
@@ -545,8 +551,9 @@
                     height: 100%;
                     pointer-events: auto;
                     grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
-                    grid-auto-rows: 1fr;
+                    grid-auto-rows: min-content; /* Let content determine height */
                     align-items: start;
+                    justify-items: stretch;
                 }
 
                 .ksm-stream-container {
@@ -634,14 +641,15 @@
                     background: #000;
                     position: relative;
                     width: 100%;
-                    height: 100%;
+                    height: 0;
+                    padding-bottom: 56.25%; /* 16:9 aspect ratio */
                     overflow: hidden;
-                    display: flex;
-                    align-items: stretch;
-                    justify-content: stretch;
                 }
 
                 .ksm-stream-player iframe {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
                     width: 100% !important;
                     height: 100% !important;
                     border: none !important;
@@ -649,7 +657,7 @@
                     padding: 0 !important;
                     box-sizing: border-box !important;
                     min-width: 480px;
-                    min-height: 200px;
+                    min-height: 270px; /* 480 * 0.5625 for 16:9 */
                 }
 
 
@@ -745,6 +753,8 @@
                 .ksm-pickle-rain.sweet { animation-duration: 4s; }
                 .ksm-pickle-rain.sour { animation-duration: 2.5s; }
                 .ksm-pickle-rain.gherkin { animation-duration: 3.5s; }
+                .ksm-pickle-rain.cucumber { animation-duration: 4.2s; }
+                .ksm-pickle-rain.jar { animation-duration: 3.8s; }
 
                 .ksm-pickle-rain.dill { left: 10%; animation-delay: 0s; }
                 .ksm-pickle-rain.sweet { left: 25%; animation-delay: 0.5s; }
@@ -761,11 +771,11 @@
                     10% {
                         opacity: 1;
                     }
-                    90% {
+                    85% {
                         opacity: 1;
                     }
                     100% {
-                        transform: translateY(calc(100vh + 50px)) rotate(360deg) scale(0.5);
+                        transform: translateY(calc(100vh + 50px)) rotate(720deg) scale(0.3);
                         opacity: 0;
                     }
                 }
@@ -1539,6 +1549,23 @@
         }
 
         /**
+         * Debug function to check stored config (call from console: window.ksmDebugConfig())
+         */
+        debugConfig() {
+            console.log('🥒 === DEBUG CONFIG ===');
+            console.log('Current config:', this.config);
+            console.log('Stored values:');
+            for (const [key, defaultValue] of Object.entries(DEFAULT_CONFIG)) {
+                const stored = GM_getValue(key);
+                console.log(`  ${key}:`, stored);
+            }
+            console.log('===================');
+        }
+
+        // Make debug function globally available
+        window.ksmDebugConfig = () => this.debugConfig();
+
+        /**
          * Clean up all resources
          */
         cleanup() {
@@ -2084,31 +2111,45 @@
          * Trigger pickle rain animation when first stream goes live
          */
         triggerPickleRain() {
-            console.log('🥒 PICKLE RAIN! First stream detected - time to celebrate!');
+            console.log('🥒 PICKLE STORM! First stream detected - time to celebrate!');
 
-            const pickleTypes = ['🥒', '🥒', '🥒', '🥒', '🥒', '🥒'];
+            const pickleEmojis = ['🥒', '🥒', '🥒', '🥒', '🥒', '🥒', '🥒', '🥒', '🥒', '🥒', '🥒', '🥒'];
             const pickleClasses = ['dill', 'sweet', 'sour', 'gherkin', 'cucumber', 'jar'];
 
-            // Create 6 falling pickles with different timing
-            for (let i = 0; i < 6; i++) {
-                setTimeout(() => {
-                    const pickle = document.createElement('div');
-                    pickle.className = `ksm-pickle-rain ${pickleClasses[i]}`;
-                    pickle.textContent = pickleTypes[i];
+            // Create a massive pickle storm - 24 pickles total!
+            const totalPickles = 24;
+            const waves = 3; // 3 waves of pickles
+            const picklesPerWave = totalPickles / waves;
 
-                    // Add some random horizontal variation
-                    const randomOffset = (Math.random() - 0.5) * 100; // -50px to +50px
-                    pickle.style.left = `calc(${10 + i * 15}% + ${randomOffset}px)`;
-
-                    document.body.appendChild(pickle);
-
-                    // Remove pickle after animation completes (5 seconds max)
+            for (let wave = 0; wave < waves; wave++) {
+                for (let i = 0; i < picklesPerWave; i++) {
                     setTimeout(() => {
-                        if (pickle.parentNode) {
-                            pickle.parentNode.removeChild(pickle);
-                        }
-                    }, 5000);
-                }, i * 200); // Stagger the drops
+                        const pickle = document.createElement('div');
+                        pickle.className = `ksm-pickle-rain ${pickleClasses[i % pickleClasses.length]}`;
+
+                        // Use more variety in pickle emojis
+                        const emojiIndex = Math.floor(Math.random() * pickleEmojis.length);
+                        pickle.textContent = pickleEmojis[emojiIndex];
+
+                        // Distribute across the full width with more randomness
+                        const basePosition = (i / picklesPerWave) * 100; // Even distribution
+                        const randomOffset = (Math.random() - 0.5) * 200; // -100px to +100px variation
+                        pickle.style.left = `calc(${basePosition}% + ${randomOffset}px)`;
+
+                        // Add slight size variation for more chaos
+                        const sizeVariation = 0.8 + Math.random() * 0.4; // 0.8x to 1.2x scale
+                        pickle.style.fontSize = `${32 * sizeVariation}px`;
+
+                        document.body.appendChild(pickle);
+
+                        // Remove pickle after animation completes (6 seconds max for longer animation)
+                        setTimeout(() => {
+                            if (pickle.parentNode) {
+                                pickle.parentNode.removeChild(pickle);
+                            }
+                        }, 6000);
+                    }, wave * 800 + i * 100); // Stagger waves and individual drops
+                }
             }
 
             // Show a celebration message
