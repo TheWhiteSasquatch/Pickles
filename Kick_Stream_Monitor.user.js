@@ -16,6 +16,7 @@
 // @connect      kick.com
 // @connect      web.kick.com
 // @connect      player.kick.com
+// @connect      raw.githubusercontent.com
 // @run-at       document-start
 // ==/UserScript==
 
@@ -255,11 +256,15 @@
                         resolve(this.getFallbackChannels());
                     },
                     onerror: (error) => {
-                        console.warn('🥒 Failed to fetch channels from GitHub:', error);
+                        console.warn('🥒 Failed to fetch channels from GitHub:', {
+                            status: error.status,
+                            statusText: error.statusText,
+                            url: channelsUrl
+                        });
                         resolve(this.getFallbackChannels());
                     },
                     ontimeout: () => {
-                        console.warn('🥒 Timeout fetching channels from GitHub');
+                        console.warn('🥒 Timeout fetching channels from GitHub (check @connect permissions)');
                         resolve(this.getFallbackChannels());
                     }
                 });
