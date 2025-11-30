@@ -164,6 +164,9 @@
 
             // Set up keyboard shortcuts
             this.setupKeyboardShortcuts();
+
+            // Make debug function globally available
+            window.ksmDebugConfig = () => this.debugConfig();
         }
 
         /**
@@ -1572,9 +1575,6 @@
             }
             console.log('===================');
         }
-
-        // Make debug function globally available
-        window.ksmDebugConfig = () => this.debugConfig();
 
         /**
          * Clean up all resources
