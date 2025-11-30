@@ -34,7 +34,7 @@ Think of it as a "pickle sheriff" who completely transforms how you watch Kick s
 - **🔇 Quiet Videos**: Videos start muted (no surprise loud sounds!)
 - **💬 Optional Chat**: Can show chat next to videos if you want
 - **🔄 Auto-Check**: Every 5 minutes, it checks if your favorite channels are live
-- **🌐 Cross-Site Compatible**: Works on most websites, but some block browser extensions
+- **🌐 Cross-Site Compatible**: Works on most websites (monitoring starts only when you click the logo)
 
 ### Pickle Style Stuff:
 - **🚔 Sheriff Theme**: Everything looks like a cartoon pickle sheriff!
@@ -52,7 +52,7 @@ Think of it as a "pickle sheriff" who completely transforms how you watch Kick s
 ### Extra Cool Features:
 - **⚙️ Settings**: Change how often it checks, how wide the chat is, sound on/off
 - **🎯 Resize Chat**: Make chat wider or thinner to hide annoying pinned messages
-- **📏 Resize Grid**: Click and drag the bottom-right corner to resize the entire video grid
+- **📏 Resize Grid**: Click and drag corners/edges to resize (click outside grid to hide and browse normally)
 - **🔄 Smart GUI**: Pickle button automatically moves to avoid being covered by the grid
 - **📸 Screenshots**: Take pictures of streams (use Ctrl+Shift+S)
 - **⌨️ Shortcuts**: Quick keyboard buttons for common actions

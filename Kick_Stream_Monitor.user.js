@@ -122,17 +122,13 @@
                 // Full functionality on Kick.com pages - but wait for user interaction
                 console.log('🥒 Pickle Patrol ready on Kick.com - click logo to activate monitoring');
             } else {
-                // Cross-site functionality - start monitoring if enabled
-                console.log('🥒 Running cross-site patrol - monitoring active');
+                // Cross-site functionality - wait for user interaction
+                console.log('🥒 Cross-site patrol ready - click logo to start monitoring');
 
                 // Store CSP issues for status display
                 this.cspIssues = cspIssues;
 
-                // Auto-start monitoring if enabled (for cross-site persistence)
-                if (this.config.enabled) {
-                    console.log('🥒 Auto-starting monitoring on non-Kick site');
-                    this.startMonitoring();
-                }
+                // Don't auto-start monitoring - wait for user to click logo
             }
 
             // Set up page unload cleanup
@@ -576,7 +572,7 @@
                     left: 20px;
                     width: calc(100vw - 40px);
                     height: calc(100vh - 100px);
-                    z-index: 9999;
+                    z-index: 9998; /* Lower than GUI but higher than page content */
                     display: none;
                     pointer-events: none;
                     resize: both;
@@ -621,6 +617,7 @@
 
                 .ksm-grid-container.active {
                     display: block;
+                    pointer-events: auto;
                 }
 
                 .ksm-stream-grid {
@@ -1098,10 +1095,14 @@
             gridContainer.className = 'ksm-grid-container';
             gridContainer.id = 'ksm-grid-container';
 
-            // Restore saved grid size if available
+            // Restore saved grid size if available, otherwise use a smaller default
             if (this.config.gridWidth && this.config.gridHeight) {
                 gridContainer.style.width = `${this.config.gridWidth}px`;
                 gridContainer.style.height = `${this.config.gridHeight}px`;
+            } else {
+                // Default to smaller size to not completely block the page
+                gridContainer.style.width = `800px`;
+                gridContainer.style.height = `600px`;
             }
 
             const grid = document.createElement('div');
@@ -2172,6 +2173,18 @@
             observer.observe(container, {
                 attributes: true,
                 attributeFilter: ['class']
+            });
+
+            // Add click-outside-to-hide functionality
+            document.addEventListener('click', (e) => {
+                if (this.grid && this.grid.container &&
+                    this.grid.container.classList.contains('active') &&
+                    !this.grid.container.contains(e.target) &&
+                    (!this.gui || !this.gui.container || !this.gui.container.contains(e.target))) {
+                    // Click was outside grid and GUI - hide the grid
+                    this.toggleGrid(false);
+                    console.log('🥒 Grid hidden - clicked outside');
+                }
             });
 
             console.log('🥒 Grid resize functionality initialized');
