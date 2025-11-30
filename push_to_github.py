@@ -137,10 +137,6 @@ def main():
         if os.path.exists(file):
             files_to_commit.append(file)
 
-    # Also add .gitignore if it exists (for initial setup)
-    if os.path.exists(".gitignore"):
-        files_to_commit.append(".gitignore")
-
     if files_to_commit:
         # Properly quote filenames to handle spaces and special characters
         quoted_files = [f'"{file}"' for file in files_to_commit]
