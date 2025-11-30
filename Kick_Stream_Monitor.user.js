@@ -2118,16 +2118,21 @@
             this.grid.grid.style.gridTemplateColumns = '';
             this.grid.grid.style.gridAutoRows = '';
 
-            // Adjust grid container height to fit content when stretched wide
-            if (this.grid.container) {
-                const containerRect = this.grid.container.getBoundingClientRect();
-                const gridRect = this.grid.grid.getBoundingClientRect();
+            // Calculate precise height based on actual content
+            if (this.grid.container && this.grid.grid) {
+                // Use a small timeout to let CSS layout settle
+                setTimeout(() => {
+                    const gridRect = this.grid.grid.getBoundingClientRect();
+                    const containerRect = this.grid.container.getBoundingClientRect();
 
-                // If grid content is shorter than container, shrink container to fit
-                if (gridRect.height > 0 && gridRect.height < containerRect.height - 50) {
-                    const newHeight = Math.max(300, gridRect.height + 20); // Add some padding
-                    this.grid.container.style.height = `${newHeight}px`;
-                }
+                    // Only adjust if content is significantly shorter than container
+                    if (gridRect.height > 0 && gridRect.height < containerRect.height - 100) {
+                        // Add minimal padding (just enough for borders/shadows)
+                        const newHeight = Math.max(250, gridRect.height + 30);
+                        this.grid.container.style.height = `${newHeight}px`;
+                        console.log(`Grid height adjusted to fit content: ${newHeight}px`);
+                    }
+                }, 50);
             }
 
             // Update chat heights to match video containers
