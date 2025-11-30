@@ -354,12 +354,12 @@
                     display: none;
                     background: linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(30, 30, 30, 0.95));
                     color: white;
-                    padding: 25px;
-                    border-radius: 20px;
-                    margin-top: 15px;
-                    min-width: 340px;
-                    max-width: 420px;
-                    max-height: 80vh;
+                    padding: 15px;
+                    border-radius: 15px;
+                    margin-top: 10px;
+                    min-width: 320px;
+                    max-width: 380px;
+                    max-height: 70vh;
                     overflow-y: auto;
                     box-shadow: 0 8px 25px rgba(83, 252, 24, 0.2);
                     border: 3px solid #53fc18;
@@ -371,8 +371,8 @@
                 }
 
                 .ksm-section {
-                    margin-bottom: 20px;
-                    padding-bottom: 15px;
+                    margin-bottom: 12px;
+                    padding-bottom: 8px;
                     border-bottom: 1px solid #333;
                 }
 
@@ -382,9 +382,9 @@
                 }
 
                 .ksm-section h3 {
-                    margin: 0 0 12px 0;
+                    margin: 0 0 8px 0;
                     color: #53fc18;
-                    font-size: 18px;
+                    font-size: 16px;
                     font-weight: bold;
                     text-shadow: 0 2px 4px rgba(83, 252, 24, 0.3);
                     text-transform: uppercase;
@@ -474,8 +474,8 @@
 
                 .ksm-add-channel {
                     display: flex;
-                    margin-top: 8px;
-                    gap: 8px;
+                    margin-top: 4px;
+                    gap: 6px;
                 }
 
                 .ksm-add-channel input {
@@ -486,11 +486,11 @@
                     background: linear-gradient(45deg, #53fc18, #4ade17);
                     color: black;
                     border: none;
-                    padding: 8px 16px;
-                    border-radius: 12px;
+                    padding: 6px 12px;
+                    border-radius: 8px;
                     cursor: pointer;
                     font-weight: bold;
-                    font-size: 14px;
+                    font-size: 13px;
                     text-transform: uppercase;
                     letter-spacing: 1px;
                     transition: all 0.3s ease;
@@ -504,14 +504,15 @@
                 }
 
                 .ksm-status {
-                    padding: 12px;
+                    padding: 8px;
                     background: linear-gradient(135deg, rgba(83, 252, 24, 0.1), rgba(74, 222, 23, 0.15));
-                    border-radius: 12px;
-                    margin-bottom: 15px;
+                    border-radius: 8px;
+                    margin-bottom: 10px;
                     border-left: 4px solid #53fc18;
                     box-shadow: 0 2px 8px rgba(83, 252, 24, 0.2);
                     font-weight: bold;
                     text-align: center;
+                    font-size: 13px;
                 }
 
                 .ksm-grid-preview {
@@ -916,8 +917,8 @@
             const liveHeader = document.createElement('h4');
             liveHeader.textContent = '🥒 Fresh Pickles';
             liveHeader.style.color = '#53fc18';
-            liveHeader.style.margin = '10px 0 5px 0';
-            liveHeader.style.fontSize = '14px';
+            liveHeader.style.margin = '6px 0 3px 0';
+            liveHeader.style.fontSize = '13px';
             channelSection.appendChild(liveHeader);
 
             const liveChannelList = document.createElement('div');
@@ -930,8 +931,8 @@
             const monitoredHeader = document.createElement('h4');
             monitoredHeader.textContent = '🥒 Pickle Watch List';
             monitoredHeader.style.color = '#ccc';
-            monitoredHeader.style.margin = '15px 0 5px 0';
-            monitoredHeader.style.fontSize = '14px';
+            monitoredHeader.style.margin = '8px 0 3px 0';
+            monitoredHeader.style.fontSize = '13px';
             channelSection.appendChild(monitoredHeader);
 
             const channelList = document.createElement('div');
