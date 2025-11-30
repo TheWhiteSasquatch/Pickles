@@ -1,17 +1,17 @@
-# Development files - not for GitHub
-Kick_Stream_Monitor_Plan.md
-push_to_github.py
+# Cache files
+.mp3_cache
 
-# Temporary files
-*.tmp
-*.log
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-# OS files
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
-
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
