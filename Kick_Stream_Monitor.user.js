@@ -294,7 +294,7 @@
                 maxStreams: 2, // Suggested default (2 streams), no actual limit
                 showChat: true,
                 theme: 'dark',
-                soundEnabled: true
+                soundEnabled: false
             };
 
             // Try to fetch updated channels from GitHub
