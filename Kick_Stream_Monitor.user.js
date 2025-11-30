@@ -622,12 +622,12 @@
 
                 .ksm-stream-grid {
                     display: grid;
-                    gap: 10px;
+                    gap: 15px;
                     height: 100%;
                     pointer-events: auto;
-                    grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
-                    grid-auto-rows: min-content; /* Let content determine height */
-                    align-items: start;
+                    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                    grid-auto-rows: 1fr; /* Make rows equal height for consistent layout */
+                    align-items: stretch;
                     justify-items: stretch;
                 }
 
@@ -638,7 +638,8 @@
                     overflow: hidden;
                     display: flex;
                     flex-direction: column;
-                    min-height: 250px;
+                    height: 100%; /* Fill grid cell height */
+                    min-height: 200px;
                     box-shadow: 0 6px 20px rgba(0,0,0,0.6);
                     transition: all 0.3s ease;
                 }
@@ -731,8 +732,8 @@
                     margin: 0 !important;
                     padding: 0 !important;
                     box-sizing: border-box !important;
-                    min-width: 480px;
-                    min-height: 270px; /* 480 * 0.5625 for 16:9 */
+                    min-width: 200px; /* More flexible minimum */
+                    min-height: 150px; /* More flexible minimum */
                 }
 
 
@@ -2089,7 +2090,7 @@
         }
 
         /**
-         * Update grid layout based on number of streams and settings
+         * Update grid layout based on number of streams and container size
          */
         updateGridLayout() {
             const streamCount = this.streamContainers.size;
@@ -2101,11 +2102,26 @@
 
             this.grid.noStreamsMsg.style.display = 'none';
 
-            // Let CSS Grid handle the layout automatically with responsive sizing
-            // Remove any JavaScript overrides and let the CSS minmax() do its job
-            this.grid.grid.style.gridTemplateColumns = '';
+            // Calculate optimal grid columns based on container size and stream count
+            if (this.grid.container) {
+                const containerRect = this.grid.container.getBoundingClientRect();
+                const containerWidth = containerRect.width;
 
-            console.log(`Grid layout updated: ${streamCount} streams, CSS Grid auto-sizing active`);
+                // Estimate columns: aim for videos around 350-400px wide
+                const estimatedColumns = Math.max(1, Math.floor(containerWidth / 380));
+
+                // Limit columns based on stream count (don't create empty columns)
+                const actualColumns = Math.min(estimatedColumns, streamCount);
+
+                // Set grid columns dynamically
+                if (actualColumns > 1) {
+                    this.grid.grid.style.gridTemplateColumns = `repeat(${actualColumns}, 1fr)`;
+                } else {
+                    this.grid.grid.style.gridTemplateColumns = '1fr';
+                }
+            }
+
+            console.log(`Grid layout updated: ${streamCount} streams, responsive columns active`);
         }
 
         /**
