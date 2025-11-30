@@ -122,13 +122,18 @@
                 // Full functionality on Kick.com pages - but wait for user interaction
                 console.log('🥒 Pickle Patrol ready on Kick.com - click logo to activate monitoring');
             } else {
-                // Cross-site functionality - wait for user interaction
-                console.log('🥒 Cross-site patrol ready - click logo to start monitoring');
+                // Cross-site functionality - check if we should auto-start monitoring
+                const shouldAutoStart = this.shouldAutoStartMonitoring();
+
+                if (shouldAutoStart) {
+                    console.log('🥒 Auto-starting monitoring (within 30min window)');
+                    this.startMonitoring();
+                } else {
+                    console.log('🥒 Cross-site patrol ready - click logo to start monitoring');
+                }
 
                 // Store CSP issues for status display
                 this.cspIssues = cspIssues;
-
-                // Don't auto-start monitoring - wait for user to click logo
             }
 
             // Set up page unload cleanup
@@ -295,7 +300,8 @@
                 theme: 'dark',
                 soundEnabled: false,
                 gridWidth: null, // Auto-sized initially
-                gridHeight: null // Auto-sized initially
+                gridHeight: null, // Auto-sized initially
+                lastMonitoringEnabled: null // Timestamp when monitoring was last enabled
             };
 
             // Try to fetch updated channels from GitHub
