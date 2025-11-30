@@ -1,20 +1,23 @@
-# 🥒 PICKLE PATROL - Watch Live Streams Like a Pickle Sheriff!
+# 🥒 PICKLE PATROL - Custom Interface for Kick Streams!
 
 ## 🚨 FIRST THING: This Is NOT About Real Pickles!
 
 **IMPORTANT: This is NOT a pickle finder app!** 🥒❌
 
-This is just a fun app that looks like pickles and watches live video streams on Kick.com. The pickle theme is just for fun - it has NOTHING to do with:
+This is a **browser extension script** that gives Kick.com a complete interface makeover! Instead of Kick's normal layout, you get a custom pickle-themed control panel with enhanced features. The pickle theme is just for fun - it has NOTHING to do with:
 - Finding pickle stores
 - Making pickles
 - Eating pickles
 - Pickle delivery
 
-It's just cute pickle graphics for watching live streams! Think of it as a "pickle sheriff" who watches over your favorite streamers.
+Think of it as a "pickle sheriff" who completely transforms how you watch Kick streams!
 
 ![Pickle Sheriff Logo](image%20(20).jpg)
 
 ## 🎯 WHAT DOES THIS PICKLE DO?
+
+### **🚨 Interface Makeover Alert!**
+**This isn't just "watching Kick streams" - it completely transforms how you experience Kick.com!** Instead of using Kick's normal interface, you get a custom pickle-themed overlay with superpowers.
 
 ### Basic Stuff It Does:
 - **🥒 Pickle Logo**: A cute pickle button that appears in the corner of your screen
@@ -40,7 +43,7 @@ It's just cute pickle graphics for watching live streams! Think of it as a "pick
 ### Extra Cool Features:
 - **⚙️ Settings**: Change how often it checks, how wide the chat is, sound on/off
 - **🎯 Resize Chat**: Make chat wider or thinner to hide annoying pinned messages
-- **📸 Screenshots**: Take pictures of streams (if you have the right browser addon)
+- **📸 Screenshots**: Take pictures of streams (use Ctrl+Shift+S)
 - **⌨️ Shortcuts**: Quick keyboard buttons for common actions
 
 ## 🚀 HOW TO GET THIS PICKLE WORKING
@@ -64,7 +67,7 @@ It's just cute pickle graphics for watching live streams! Think of it as a "pick
 4. Make sure the script is "Enabled" (should be checked automatically)
 
 #### Step 3: You're Done!
-1. **Go to any website** (like google.com or youtube.com)
+1. **Go to any website** (like google.com or kick.com)
 2. Look in the **top-right corner** of your screen
 3. You should see a cute **pickle logo** 🥒
 4. **Click it** and you're ready to watch streams!
@@ -81,7 +84,7 @@ It's just cute pickle graphics for watching live streams! Think of it as a "pick
 
 ## 🎮 HOW TO USE YOUR PICKLE
 
-### Super Simple Start:
+### Getting Started:
 1. **Find the pickle** 🥒 in the top-right corner of any website
 2. **Click the pickle logo** - it will show you buttons
 3. **Click "🥒GRID"** - this shows you live video streams
@@ -96,13 +99,14 @@ It's just cute pickle graphics for watching live streams! Think of it as a "pick
 ### How It Works:
 - **Smart Checking**: Every 5 minutes, it checks if your channels are live
 - **Battery Friendly**: Only checks when you're actively using it
-- **Auto-Updates**: Channel list updates itself from the internet
+- **Auto-Channel Updates**: Channel list updates itself from the internet
 - **Works Anywhere**: Use it on any website, not just Kick.com
+- **Custom Interface**: Replaces Kick's normal viewing experience with a pickle-themed grid system
 
 ### Managing Channels:
 - **Pre-Loaded**: Comes with popular channels already set up
 - **Remove Any**: Click ❌ next to channels you don't like
-- **Auto-Updates**: New channels get added automatically
+- **Auto-Channel Updates**: New channels get added automatically
 
 ## ⚙️ SETTINGS (HOW TO CUSTOMIZE)
 
@@ -129,6 +133,7 @@ It's just cute pickle graphics for watching live streams! Think of it as a "pick
 
 - **`Ctrl+Shift+K`**: Open/close the settings panel
 - **`Ctrl+Shift+G`**: Show/hide the video grid
+- **`Ctrl+Shift+S`**: Take screenshots of all streams
 - **`Ctrl+Shift+X`**: Close all videos at once
 - **`Escape`**: Close whatever panel is open
 
@@ -170,7 +175,7 @@ It's just cute pickle graphics for watching live streams! Think of it as a "pick
 
 ### Things This Pickle Can't Do:
 - **Can't control video volume** directly (browser security rules)
-- **Can't take screenshots** without extra browser addons
+- **Can't take screenshots** (use Ctrl+Shift+S keyboard shortcut instead)
 - **Some work networks** might block it
 - **Some websites are extra strict** and won't show videos
 - **Can't remove pinned messages** from chat, but you can make chat thinner to hide them

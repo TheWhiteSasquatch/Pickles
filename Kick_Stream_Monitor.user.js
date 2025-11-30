@@ -1865,7 +1865,7 @@
 
             if (isLive && !wasLive) {
                 // Channel went live
-                console.log(`${channel} is now live!`);
+                // console.log(`${channel} is now live!`); // Commented out - too verbose
                 this.liveStreams.add(channel);
                 this.onStreamLive(channel, wasEmpty);
             } else if (!isLive && wasLive) {
@@ -2128,8 +2128,8 @@
             const pickleEmojis = ['🥒', '🥒', '🥒', '🥒', '🥒', '🥒', '🥒', '🥒', '🥒', '🥒', '🥒', '🥒'];
             const pickleClasses = ['dill', 'sweet', 'sour', 'gherkin', 'cucumber', 'jar'];
 
-            // Create a massive pickle storm - 24 pickles total!
-            const totalPickles = 24;
+            // Create a massive pickle storm - 72 pickles total!
+            const totalPickles = 72;
             const waves = 3; // 3 waves of pickles
             const picklesPerWave = totalPickles / waves;
 
@@ -2164,8 +2164,8 @@
                 }
             }
 
-            // Show a celebration message
-            this.showPickleRainNotification();
+            // Show a celebration message (disabled - just rain the pickles)
+            // this.showPickleRainNotification();
         }
 
         /**
