@@ -48,41 +48,20 @@
 (function() {
     'use strict';
 
-    // Configuration defaults
-    const DEFAULT_CONFIG = {
-        enabled: true,
-        monitoredChannels: [
-            'ppwashington',
-            'rampagejackson',
-            'predatorpoachers',
-            'ppillinois',
-            'bikersagainstpredators',
-            'opp_oklahoma',
-            'pplongisland'
-        ],
-        pollInterval: 300000, // 5 minutes
-        maxRetries: 3,
-        retryDelay: 5000, // 5 seconds
-        gridColumns: 2,
-        gridRows: 2,
-        maxStreams: 2, // Suggested default (2 streams), no actual limit
-        showChat: true,
-        theme: 'dark',
-        soundEnabled: true,
-        chatWidth: 300
-    };
-
     // Main application class - The Pickle Patrol!
     class PicklePatrolMonitor {
         constructor() {
-            this.config = this.loadConfig();
             this.liveStreams = new Set();
             this.monitoringInterval = null;
             this.gui = null;
             this.grid = null;
             this.streamContainers = new Map();
 
-            this.init();
+            // Load config asynchronously and then initialize
+            this.loadConfig().then(config => {
+                this.config = config;
+                this.init();
+            });
         }
 
         /**
@@ -253,11 +232,92 @@
         }
 
         /**
+         * Fetch default channels from GitHub
+         */
+        async fetchDefaultChannels() {
+            return new Promise((resolve) => {
+                const channelsUrl = 'https://raw.githubusercontent.com/TheWhiteSasquatch/Pickles/refs/heads/master/channels.json';
+
+                GM_xmlhttpRequest({
+                    method: 'GET',
+                    url: channelsUrl,
+                    timeout: 5000,
+                    onload: (response) => {
+                        try {
+                            if (response.status === 200) {
+                                const data = JSON.parse(response.responseText);
+                                if (data.monitoredChannels && Array.isArray(data.monitoredChannels)) {
+                                    console.log('🥒 Fetched channels from GitHub:', data.monitoredChannels);
+                                    resolve(data.monitoredChannels);
+                                    return;
+                                }
+                            }
+                        } catch (error) {
+                            console.warn('🥒 Error parsing channels JSON:', error);
+                        }
+                        // Fallback to hardcoded list
+                        console.log('🥒 Using fallback hardcoded channels');
+                        resolve(this.getFallbackChannels());
+                    },
+                    onerror: (error) => {
+                        console.warn('🥒 Failed to fetch channels from GitHub:', error);
+                        resolve(this.getFallbackChannels());
+                    },
+                    ontimeout: () => {
+                        console.warn('🥒 Timeout fetching channels from GitHub');
+                        resolve(this.getFallbackChannels());
+                    }
+                });
+            });
+        }
+
+        /**
+         * Get fallback hardcoded channels
+         */
+        getFallbackChannels() {
+            return [
+                'ppwashington',
+                'rampagejackson',
+                'predatorpoachers',
+                'ppillinois',
+                'bikersagainstpredators',
+                'opp_oklahoma',
+                'pplongisland'
+            ];
+        }
+
+        /**
          * Load configuration from storage
          */
-        loadConfig() {
+        async loadConfig() {
+            // Create default config with fallback channels first
+            const fallbackChannels = this.getFallbackChannels();
+            const defaultConfig = {
+                enabled: true,
+                monitoredChannels: fallbackChannels,
+                pollInterval: 300000, // 5 minutes
+                maxRetries: 3,
+                retryDelay: 5000, // 5 seconds
+                gridColumns: 2,
+                gridRows: 2,
+                maxStreams: 2, // Suggested default (2 streams), no actual limit
+                showChat: true,
+                theme: 'dark',
+                soundEnabled: true,
+                chatWidth: 300
+            };
+
+            // Try to fetch updated channels from GitHub
+            try {
+                const githubChannels = await this.fetchDefaultChannels();
+                defaultConfig.monitoredChannels = githubChannels;
+            } catch (error) {
+                console.warn('🥒 Failed to load GitHub channels, using fallback');
+            }
+
+            // Load from storage with defaults
             const config = {};
-            for (const [key, defaultValue] of Object.entries(DEFAULT_CONFIG)) {
+            for (const [key, defaultValue] of Object.entries(defaultConfig)) {
                 const stored = GM_getValue(key);
                 config[key] = stored !== undefined ? stored : defaultValue;
             }
