@@ -149,15 +149,6 @@
             window.ksmDebugConfig = () => this.debugConfig();
         }
 
-        /**
-         * Update chat widths for all existing streams
-         */
-        updateChatWidths() {
-            const chatElements = document.querySelectorAll('.ksm-stream-chat');
-            chatElements.forEach(chat => {
-                chat.style.width = this.config.chatWidth + 'px';
-            });
-        }
 
         /**
          * Check Content Security Policy compatibility
@@ -303,8 +294,7 @@
                 maxStreams: 2, // Suggested default (2 streams), no actual limit
                 showChat: true,
                 theme: 'dark',
-                soundEnabled: true,
-                chatWidth: 300
+                soundEnabled: true
             };
 
             // Try to fetch updated channels from GitHub
@@ -935,10 +925,6 @@
                     <input type="checkbox" id="ksm-show-chat" ${this.config.showChat ? 'checked' : ''}>
                     Show Chat
                 </label>
-                <div class="ksm-input-group">
-                    <label for="ksm-chat-width">Chat Width (px):</label>
-                    <input type="number" id="ksm-chat-width" min="200" max="500" value="${this.config.chatWidth}">
-                </div>
             `;
 
             // Add grid preview
@@ -1228,17 +1214,6 @@
             showChatToggle.onchange = (e) => {
                 this.config.showChat = e.target.checked;
                 this.saveConfig();
-            };
-
-            const chatWidthInput = panel.querySelector('#ksm-chat-width');
-            chatWidthInput.onchange = (e) => {
-                const value = parseInt(e.target.value);
-                if (value >= 200 && value <= 500) {
-                    this.config.chatWidth = value;
-                    this.saveConfig();
-                    // Update existing chat widths
-                    this.updateChatWidths();
-                }
             };
 
             const soundToggle = panel.querySelector('#ksm-sound-enabled');
@@ -2026,7 +2001,6 @@
             if (this.config.showChat) {
                 const chat = document.createElement('div');
                 chat.className = 'ksm-stream-chat';
-                chat.style.width = this.config.chatWidth + 'px';
 
                 const chatHeader = document.createElement('div');
                 chatHeader.className = 'ksm-chat-header';

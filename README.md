@@ -113,7 +113,6 @@ It's just cute pickle graphics for watching live streams! Think of it as a "pick
 
 ### Video & Chat Settings:
 - **Show Chat**: Turn on/off the chat box next to videos
-- **Chat Size**: Make chat wider (500px) or thinner (200px) to hide annoying pinned messages
 - **Grid Columns**: How many columns of videos you want (1-4)
 
 ### Sound Settings:
@@ -152,11 +151,6 @@ It's just cute pickle graphics for watching live streams! Think of it as a "pick
 - **Click the link provided** to open the stream in a new tab
 - **This is normal** - the website is just being extra safe
 
-### Chat Too Wide/Narrow?
-- **Use the Chat Width setting** in the pickle settings
-- **Make it thinner (200px)** to hide annoying pinned messages
-- **Make it wider (500px)** if you want to see more chat
-- **Changes happen instantly** when you adjust the slider
 
 ### Sound Not Working?
 - **Some websites don't allow sounds** for security
@@ -213,6 +207,6 @@ This is free and open source software under the MIT License (that means it's fre
 
 **Ready to be a pickle sheriff? Click that pickle and start watching streams!** 🚔🥒📺
 
-*Version 1.0.9 - Now with sounds, adjustable chat, and automatic channel updates!* ✨
+*Version 1.0.9 - Now with sounds and automatic channel updates!* ✨
 
 **🔗 Get it here**: [GitHub Repository](https://github.com/TheWhiteSasquatch/Pickles)
