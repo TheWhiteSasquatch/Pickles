@@ -628,12 +628,12 @@
 
                 .ksm-stream-grid {
                     display: grid;
-                    gap: 15px;
+                    gap: 10px;
                     height: 100%;
                     pointer-events: auto;
-                    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-                    grid-auto-rows: 1fr; /* Make rows equal height for consistent layout */
-                    align-items: stretch;
+                    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                    grid-auto-rows: minmax(200px, 1fr);
+                    align-items: start;
                     justify-items: stretch;
                 }
 
@@ -644,7 +644,6 @@
                     overflow: hidden;
                     display: flex;
                     flex-direction: column;
-                    height: 100%; /* Fill grid cell height */
                     min-height: 200px;
                     box-shadow: 0 6px 20px rgba(0,0,0,0.6);
                     transition: all 0.3s ease;
@@ -2103,7 +2102,7 @@
         }
 
         /**
-         * Update grid layout based on number of streams and container size
+         * Update grid layout based on number of streams
          */
         updateGridLayout() {
             const streamCount = this.streamContainers.size;
@@ -2115,29 +2114,14 @@
 
             this.grid.noStreamsMsg.style.display = 'none';
 
-            // Calculate optimal grid columns based on container size and stream count
-            if (this.grid.container) {
-                const containerRect = this.grid.container.getBoundingClientRect();
-                const containerWidth = containerRect.width;
-
-                // Estimate columns: aim for videos around 350-400px wide
-                const estimatedColumns = Math.max(1, Math.floor(containerWidth / 380));
-
-                // Limit columns based on stream count (don't create empty columns)
-                const actualColumns = Math.min(estimatedColumns, streamCount);
-
-                // Set grid columns dynamically
-                if (actualColumns > 1) {
-                    this.grid.grid.style.gridTemplateColumns = `repeat(${actualColumns}, 1fr)`;
-                } else {
-                    this.grid.grid.style.gridTemplateColumns = '1fr';
-                }
-            }
+            // Let CSS handle the responsive layout - remove any JS overrides
+            this.grid.grid.style.gridTemplateColumns = '';
+            this.grid.grid.style.gridAutoRows = '';
 
             // Update chat heights to match video containers
             this.updateChatHeights();
 
-            console.log(`Grid layout updated: ${streamCount} streams, responsive columns active`);
+            console.log(`Grid layout updated: ${streamCount} streams, CSS auto-fit active`);
         }
 
         /**
