@@ -37,16 +37,18 @@ A fun, cartoonish userscript that monitors Kick.com live streams with a pickle s
 - 📱 **Responsive Layout**: Adapts to different screen sizes automatically
 
 ### Stream Management
-- ➕ **Add Channels**: Easy channel management through the settings panel
+- 📋 **Curated Channels**: Pre-configured channel list loaded from GitHub
 - ❌ **Remove Streams**: Individual stream removal with close buttons
 - 🗑️ **Clear All**: Bulk removal of all active streams
 - 🔴 **Live Indicators**: Visual status indicators for each channel
+- 🔊 **Sound Notifications**: Optional audio alerts when streams go live
 
 ### Advanced Features
-- ⚙️ **Comprehensive Settings**: Poll intervals, stream limits, chat toggles
-- 🎯 **Grid Customization**: Adjustable columns and responsive layouts
+- ⚙️ **Comprehensive Settings**: Poll intervals, stream limits, chat width, sound toggles
+- 🎯 **Grid Customization**: Adjustable columns, chat width, and responsive layouts
 - 📸 **Screenshot Support**: Capture individual streams or bulk screenshots (when enabled)
 - ⌨️ **Keyboard Shortcuts**: Quick access to common functions
+- 📱 **Chat Width Control**: Adjustable chat panel width (200-500px) to hide pinned messages
 
 ## 🚀 Installation
 
@@ -85,12 +87,10 @@ A fun, cartoonish userscript that monitors Kick.com live streams with a pickle s
 3. **Click "🥒GRID"** to show the stream monitoring grid
 4. **Click "🥒"** to access settings and channel management
 
-### Adding Channels
-1. Click the logo → Settings button
-2. Scroll to "🥒 Pickle Channels" section
-3. Enter a channel name in the input field
-4. Click "Add" or press Enter
-5. The script will start monitoring that channel
+### Channel Management
+- **Pre-configured List**: Channels are automatically loaded from GitHub
+- **Remove Unwanted**: Use the ❌ button next to channels you don't want to monitor
+- **GitHub Updates**: Channel list updates automatically when the GitHub file is modified
 
 ### Viewing Streams
 - **Grid View**: Click "🥒GRID" to see all live streams in a responsive grid
@@ -100,7 +100,8 @@ A fun, cartoonish userscript that monitors Kick.com live streams with a pickle s
 ### Monitoring Behavior
 - **Lazy Activation**: Monitoring only starts when you click the logo
 - **5-Minute Polls**: Checks for live streams every 5 minutes when active
-- **Unlimited Streams**: No hard limit - monitors all channels you add
+- **GitHub Integration**: Channel list automatically loads from GitHub repository
+- **Sound Alerts**: Optional audio notifications when streams go live
 - **Resource Efficient**: Stops monitoring when not in use
 
 ## ⚙️ Configuration
@@ -113,11 +114,15 @@ A fun, cartoonish userscript that monitors Kick.com live streams with a pickle s
 ### Grid Settings
 - **Grid Columns**: Preferred number of columns (1-4, auto-adjusts)
 - **Show Chat**: Toggle chat panels alongside video streams
+- **Chat Width**: Adjust chat panel width (200-500px) to hide pinned messages
+
+### Audio Settings
+- **Sound Notifications**: Enable/disable audio alerts when streams go live
 
 ### Channel Management
 - **Live Channels**: Real-time view of currently streaming channels
-- **Monitored Channels**: Your watchlist with live/offline indicators
-- **Add/Remove**: Easy channel management with visual feedback
+- **Monitored Channels**: Curated list loaded from GitHub (read-only)
+- **Remove Channels**: Remove unwanted channels from your personal view
 
 ## ⌨️ Keyboard Shortcuts
 
@@ -158,6 +163,11 @@ A fun, cartoonish userscript that monitors Kick.com live streams with a pickle s
 - When streams fail to load, click the provided link to open in a new tab
 - This is normal behavior - the website is protecting itself from security risks
 
+**Chat width not adjusting?**
+- Chat width control helps hide pinned messages on narrow chat panels
+- If chat doesn't resize, the website may have additional CSS restrictions
+- Try refreshing the page or switching to a different website
+
 ### Browser Compatibility
 - ✅ Chrome 80+
 - ✅ Firefox 75+
@@ -165,10 +175,12 @@ A fun, cartoonish userscript that monitors Kick.com live streams with a pickle s
 - ✅ Safari 13+
 
 ### Known Limitations
-- Cross-origin restrictions prevent direct audio control
+- Cross-origin restrictions prevent direct audio control of embedded streams
 - Screenshot functionality requires html2canvas library
 - Some corporate networks may block Kick.com APIs
 - **Content Security Policy (CSP)**: Strict websites like ESPN, news sites, or corporate portals may block stream iframes. The script will show warnings and provide alternative access methods.
+- **Chat Pinned Messages**: Cannot directly hide pinned messages due to iframe restrictions, but adjustable chat width helps minimize their visibility
+- **Sound Notifications**: May not work on all websites due to autoplay policies
 
 ## 🔒 Privacy & Security
 
@@ -199,6 +211,6 @@ This project is open source and available under the MIT License.
 
 **Ready to patrol some streams? Click that pickle logo and let the monitoring begin!** 🚔🥒📺
 
-*Version 1.0.4 - Auto-update system fully configured!* ✨
+*Version 1.0.9 - GitHub-integrated channels, sound notifications, and adjustable chat width!* ✨
 
 **📍 Official Home**: [GitHub Repository](https://github.com/TheWhiteSasquatch/Pickles)
