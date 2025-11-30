@@ -632,7 +632,7 @@
                     height: 100%;
                     pointer-events: auto;
                     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-                    grid-auto-rows: minmax(200px, 1fr);
+                    grid-auto-rows: minmax(200px, auto);
                     align-items: start;
                     justify-items: stretch;
                 }
@@ -1109,9 +1109,9 @@
                 gridContainer.style.width = `${this.config.gridWidth}px`;
                 gridContainer.style.height = `${this.config.gridHeight}px`;
             } else {
-                // Default to smaller size to not completely block the page
+                // Default to compact size to not waste vertical space
                 gridContainer.style.width = `800px`;
-                gridContainer.style.height = `600px`;
+                gridContainer.style.height = `400px`; // More compact default
             }
 
             const grid = document.createElement('div');
@@ -2117,6 +2117,18 @@
             // Let CSS handle the responsive layout - remove any JS overrides
             this.grid.grid.style.gridTemplateColumns = '';
             this.grid.grid.style.gridAutoRows = '';
+
+            // Adjust grid container height to fit content when stretched wide
+            if (this.grid.container) {
+                const containerRect = this.grid.container.getBoundingClientRect();
+                const gridRect = this.grid.grid.getBoundingClientRect();
+
+                // If grid content is shorter than container, shrink container to fit
+                if (gridRect.height > 0 && gridRect.height < containerRect.height - 50) {
+                    const newHeight = Math.max(300, gridRect.height + 20); // Add some padding
+                    this.grid.container.style.height = `${newHeight}px`;
+                }
+            }
 
             // Update chat heights to match video containers
             this.updateChatHeights();
