@@ -52,6 +52,7 @@ Think of it as a "pickle sheriff" who completely transforms how you watch Kick s
 ### Extra Cool Features:
 - **⚙️ Settings**: Change how often it checks, how wide the chat is, sound on/off
 - **🎯 Resize Chat**: Make chat wider or thinner to hide annoying pinned messages
+- **📏 Resize Grid**: Click and drag the bottom-right corner to resize the entire video grid
 - **📸 Screenshots**: Take pictures of streams (use Ctrl+Shift+S)
 - **⌨️ Shortcuts**: Quick keyboard buttons for common actions
 
@@ -104,6 +105,7 @@ Think of it as a "pickle sheriff" who completely transforms how you watch Kick s
 ### Watching Videos:
 - **Grid Layout**: Videos appear in a nice organized grid
 - **Auto-Size**: The grid adjusts automatically to your screen
+- **Resize Grid**: Click and drag the bottom-right corner to resize the entire grid
 - **Close Videos**: Click the ✕ button on any video to remove it
 - **Sound Toggle**: Turn on/off the "ding" sound when streams start
 

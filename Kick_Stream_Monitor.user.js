@@ -115,6 +115,9 @@
             // Always create grid container for cross-site patrolling
             this.createGrid();
 
+            // Initialize resize functionality
+            this.initializeResize();
+
             if (isKickPage) {
                 // Full functionality on Kick.com pages - but wait for user interaction
                 console.log('🥒 Pickle Patrol ready on Kick.com - click logo to activate monitoring');
@@ -294,7 +297,9 @@
                 maxStreams: 2, // Suggested default (2 streams), no actual limit
                 showChat: true,
                 theme: 'dark',
-                soundEnabled: false
+                soundEnabled: false,
+                gridWidth: null, // Auto-sized initially
+                gridHeight: null // Auto-sized initially
             };
 
             // Try to fetch updated channels from GitHub
@@ -569,11 +574,30 @@
                     position: fixed;
                     top: 80px;
                     left: 20px;
-                    right: 20px;
-                    bottom: 20px;
+                    width: calc(100vw - 40px);
+                    height: calc(100vh - 100px);
                     z-index: 9999;
                     display: none;
                     pointer-events: none;
+                    resize: both;
+                    overflow: hidden;
+                    min-width: 400px;
+                    min-height: 300px;
+                    max-width: calc(100vw - 40px);
+                    max-height: calc(100vh - 100px);
+                }
+
+                .ksm-grid-container::after {
+                    content: '';
+                    position: absolute;
+                    bottom: 0;
+                    right: 0;
+                    width: 20px;
+                    height: 20px;
+                    background: linear-gradient(-45deg, transparent 0%, transparent 40%, #4CAF50 40%, #4CAF50 60%, transparent 60%);
+                    cursor: nw-resize;
+                    pointer-events: auto;
+                    z-index: 10000;
                 }
 
                 .ksm-grid-container.active {
@@ -1054,6 +1078,12 @@
             const gridContainer = document.createElement('div');
             gridContainer.className = 'ksm-grid-container';
             gridContainer.id = 'ksm-grid-container';
+
+            // Restore saved grid size if available
+            if (this.config.gridWidth && this.config.gridHeight) {
+                gridContainer.style.width = `${this.config.gridWidth}px`;
+                gridContainer.style.height = `${this.config.gridHeight}px`;
+            }
 
             const grid = document.createElement('div');
             grid.className = 'ksm-stream-grid';
@@ -2049,6 +2079,46 @@
             this.grid.grid.style.gridTemplateColumns = '';
 
             console.log(`Grid layout updated: ${streamCount} streams, CSS Grid auto-sizing active`);
+        }
+
+        /**
+         * Initialize resize functionality for the grid
+         */
+        initializeResize() {
+            if (!this.grid || !this.grid.container) return;
+
+            const container = this.grid.container;
+
+            // Add resize event listener
+            container.addEventListener('resize', (e) => {
+                // Update grid layout when container is resized
+                if (this.streamContainers.size > 0) {
+                    this.updateGridLayout();
+                }
+
+                // Save new size to config
+                const rect = container.getBoundingClientRect();
+                this.config.gridWidth = rect.width;
+                this.config.gridHeight = rect.height;
+                this.saveConfig();
+            });
+
+            // Enable pointer events on the grid container when active
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        const hasActiveClass = container.classList.contains('active');
+                        container.style.pointerEvents = hasActiveClass ? 'auto' : 'none';
+                    }
+                });
+            });
+
+            observer.observe(container, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+
+            console.log('🥒 Grid resize functionality initialized');
         }
 
         /**
