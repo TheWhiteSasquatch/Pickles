@@ -1,6 +1,7 @@
 {
   "monitoredChannels": [
     "ppwashington",
+    "rampagejackson",
     "predatorpoachers",
     "ppillinois",
     "bikersagainstpredators",
@@ -8,6 +9,6 @@
     "pplongisland"
   ],
   "description": "Default channel list for Pickle Patrol Stream Monitor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "lastUpdated": "2025-01-31"
 }

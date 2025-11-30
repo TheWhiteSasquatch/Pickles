@@ -61,6 +61,16 @@
             // Load config asynchronously and then initialize
             this.loadConfig().then(config => {
                 this.config = config;
+
+                // Migrate legacy monitoredChannels to new platform structure (if needed)
+                if (this.config.monitoredChannels && !GM_getValue('migration_v2_complete')) {
+                    console.log('🥒 Migrating legacy channels to platform structure');
+                    this.config.platforms.kick.channels = this.config.monitoredChannels;
+                    // Mark migration as complete
+                    GM_setValue('migration_v2_complete', true);
+                    this.saveConfig();
+                }
+
                 this.init();
             });
         }
@@ -292,9 +302,20 @@
         async loadConfig() {
             // Create default config with fallback channels first
             const fallbackChannels = this.getFallbackChannels();
+            let kickChannels = fallbackChannels;
+
+            // Try to fetch updated channels from GitHub
+            try {
+                const githubChannels = await this.fetchDefaultChannels();
+                kickChannels = githubChannels;
+                console.log('🥒 Loaded channels from GitHub:', githubChannels);
+            } catch (error) {
+                console.warn('🥒 Failed to load GitHub channels, using fallback');
+            }
+
             const defaultConfig = {
                 enabled: true,
-                monitoredChannels: fallbackChannels,
+                monitoredChannels: kickChannels,
                 pollInterval: 300000, // 5 minutes
                 maxRetries: 3,
                 retryDelay: 5000, // 5 seconds
@@ -311,7 +332,7 @@
                 platforms: {
                     kick: {
                         enabled: true,
-                        channels: fallbackChannels,
+                        channels: kickChannels,
                         pollInterval: 300000 // 5 minutes
                     },
                     facebook: {
@@ -322,14 +343,6 @@
                 }
             };
 
-            // Try to fetch updated channels from GitHub
-            try {
-                const githubChannels = await this.fetchDefaultChannels();
-                defaultConfig.monitoredChannels = githubChannels;
-            } catch (error) {
-                console.warn('🥒 Failed to load GitHub channels, using fallback');
-            }
-
             // Load from storage with defaults
             const config = {};
             for (const [key, defaultValue] of Object.entries(defaultConfig)) {
@@ -337,14 +350,6 @@
                 config[key] = stored !== undefined ? stored : defaultValue;
             }
 
-            // Migrate legacy monitoredChannels to new platform structure
-            if (config.monitoredChannels && !GM_getValue('migration_v2_complete')) {
-                console.log('🥒 Migrating legacy channels to platform structure');
-                config.platforms.kick.channels = config.monitoredChannels;
-                // Mark migration as complete
-                GM_setValue('migration_v2_complete', true);
-                this.saveConfig();
-            }
             console.log('🥒 Loaded config:', config);
             return config;
         }
