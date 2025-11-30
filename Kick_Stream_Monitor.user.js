@@ -2380,10 +2380,96 @@
                 audio.volume = 0.7; // Set volume to 70% to not be too loud
                 audio.play().catch(error => {
                     console.log('🥒 Sound notification failed to play:', error);
+
+                    // Handle autoplay blocking with user-friendly message
+                    if (error.name === 'NotAllowedError') {
+                        this.showAudioBlockedNotification();
+                    }
                     // This is expected on many sites due to autoplay policies
                 });
             } catch (error) {
                 console.log('🥒 Sound notification error:', error);
+            }
+        }
+
+        /**
+         * Show notification when audio is blocked by browser
+         */
+        showAudioBlockedNotification() {
+            // Remove any existing audio notification
+            const existingNotification = document.querySelector('.ksm-audio-blocked-notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+
+            // Create notification bubble
+            const notification = document.createElement('div');
+            notification.className = 'ksm-audio-blocked-notification';
+            notification.innerHTML = `
+                <div style="text-align: center; font-size: 16px; margin-bottom: 8px;">
+                    🔊 Audio Blocked
+                </div>
+                <div style="text-align: center; font-size: 12px;">
+                    Click anywhere to enable sound notifications
+                </div>
+            `;
+
+            // Style the notification
+            notification.style.position = 'fixed';
+            notification.style.top = '50%';
+            notification.style.left = '50%';
+            notification.style.transform = 'translate(-50%, -50%)';
+            notification.style.background = 'linear-gradient(135deg, #ff6b6b, #ee5a52)';
+            notification.style.border = '3px solid #cc4444';
+            notification.style.borderRadius = '15px';
+            notification.style.padding = '15px';
+            notification.style.zIndex = '10001';
+            notification.style.boxShadow = '0 6px 20px rgba(0,0,0,0.8)';
+            notification.style.fontFamily = 'Comic Sans MS, cursive, Arial, sans-serif';
+            notification.style.color = 'white';
+            notification.style.maxWidth = '300px';
+            notification.style.cursor = 'pointer';
+            notification.style.transition = 'all 0.3s ease';
+
+            // Add click handler to dismiss and try audio again
+            notification.onclick = () => {
+                notification.remove();
+                // Try playing a silent audio to unlock autoplay
+                this.unlockAudio();
+            };
+
+            // Auto-remove after 8 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.style.opacity = '0';
+                    setTimeout(() => notification.remove(), 300);
+                }
+            }, 8000);
+
+            document.body.appendChild(notification);
+
+            // Animate in
+            setTimeout(() => {
+                notification.style.transform = 'translate(-50%, -50%) scale(1.05)';
+            }, 10);
+        }
+
+        /**
+         * Try to unlock audio autoplay by playing a silent sound
+         */
+        unlockAudio() {
+            try {
+                const unlockAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IAAAAAEAAQARAAAAEAAAAAEACABkYXRhAgAAAAEA');
+                unlockAudio.volume = 0.01; // Very quiet
+                unlockAudio.play().then(() => {
+                    console.log('🥒 Audio unlocked successfully');
+                    // Try playing the actual notification sound
+                    setTimeout(() => this.playSoundNotification(), 100);
+                }).catch(() => {
+                    console.log('🥒 Audio unlock failed');
+                });
+            } catch (error) {
+                console.log('🥒 Audio unlock error:', error);
             }
         }
 
