@@ -17,6 +17,8 @@
 // @connect      web.kick.com
 // @connect      player.kick.com
 // @connect      raw.githubusercontent.com
+// @connect      cors-anywhere.herokuapp.com
+// @connect      api.allorigins.win
 // @run-at       document-start
 // ==/UserScript==
 
@@ -201,6 +203,9 @@
 
             // Check if this is a Kick.com page - only run full monitoring here
             const isKickPage = window.location.hostname.includes('kick.com');
+            const isStrictSite = this.isStrictCSPSite();
+
+            console.log(`🥒 Pickle Patrol on ${window.location.hostname} - CSP Strict: ${isStrictSite}`);
 
             // Clean up any existing instances first
             this.cleanupExistingInstances();
@@ -228,6 +233,12 @@
                     console.log('🥒 Cross-site patrol ready - click logo to start monitoring');
                 }
 
+                // Log CSP information
+                if (isStrictSite) {
+                    console.warn('🥒 Strict CSP site detected - stream embedding may be blocked');
+                    console.log('🥒 Try: Opening streams in new tabs, or using less restrictive websites');
+                }
+
                 // Store CSP issues for status display
                 this.cspIssues = cspIssues;
             }
@@ -249,6 +260,41 @@
             window.ksmDebugConfig = () => this.debugConfig();
         }
 
+
+        /**
+         * Check if current site has strict CSP that blocks embedding
+         */
+        isStrictCSPSite() {
+            const hostname = window.location.hostname;
+
+            // Known strict CSP sites
+            const strictSites = [
+                'x.com', 'twitter.com',
+                'facebook.com', 'instagram.com',
+                'linkedin.com', 'tiktok.com',
+                'youtube.com', 'twitch.tv',
+                'reddit.com', 'discord.com'
+            ];
+
+            if (strictSites.some(site => hostname.includes(site))) {
+                return true;
+            }
+
+            // Check for CSP headers that block frames
+            try {
+                const cspMeta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+                if (cspMeta) {
+                    const cspContent = cspMeta.getAttribute('content');
+                    if (cspContent && (cspContent.includes('frame-src') || cspContent.includes('default-src'))) {
+                        return true;
+                    }
+                }
+            } catch (error) {
+                // Ignore CSP check errors
+            }
+
+            return false;
+        }
 
         /**
          * Check Content Security Policy compatibility
@@ -323,12 +369,13 @@
         }
 
         /**
-         * Fetch default channels from GitHub
+         * Fetch default channels from GitHub with CORS proxy fallback
          */
         async fetchDefaultChannels() {
             return new Promise((resolve) => {
                 const channelsUrl = 'https://raw.githubusercontent.com/TheWhiteSasquatch/Pickles/master/channels.json';
 
+                // Try direct request first
                 GM_xmlhttpRequest({
                     method: 'GET',
                     url: channelsUrl,
@@ -338,7 +385,7 @@
                             if (response.status === 200) {
                                 const data = JSON.parse(response.responseText);
                                 if (data.monitoredChannels && Array.isArray(data.monitoredChannels)) {
-                                    console.log('🥒 Fetched channels from GitHub:', data.monitoredChannels);
+                                    console.log('🥒 Fetched channels from GitHub (direct):', data.monitoredChannels);
                                     resolve(data.monitoredChannels);
                                     return;
                                 }
@@ -346,24 +393,74 @@
                         } catch (error) {
                             console.warn('🥒 Error parsing channels JSON:', error);
                         }
-                        // Fallback to hardcoded list
-                        console.log('🥒 Using fallback hardcoded channels');
-                        resolve(this.getFallbackChannels());
+                        // Try CORS proxy fallback
+                        this.fetchChannelsWithProxy(resolve);
                     },
                     onerror: (error) => {
-                        console.warn('🥒 Failed to fetch channels from GitHub:', {
-                            status: error.status,
-                            statusText: error.statusText,
-                            url: channelsUrl
-                        });
-                        resolve(this.getFallbackChannels());
+                        console.warn('🥒 Direct request blocked, trying CORS proxy...');
+                        this.fetchChannelsWithProxy(resolve);
                     },
                     ontimeout: () => {
-                        console.warn('🥒 Timeout fetching channels from GitHub (check @connect permissions)');
-                        resolve(this.getFallbackChannels());
+                        console.warn('🥒 Direct request timeout, trying CORS proxy...');
+                        this.fetchChannelsWithProxy(resolve);
                     }
                 });
             });
+        }
+
+        /**
+         * Fetch channels using CORS proxy as fallback
+         */
+        fetchChannelsWithProxy(resolve) {
+            // Try multiple free CORS proxies
+            const proxies = [
+                'https://api.allorigins.win/raw?url=',
+                'https://cors-anywhere.herokuapp.com/'
+            ];
+
+            const channelsUrl = 'https://raw.githubusercontent.com/TheWhiteSasquatch/Pickles/master/channels.json';
+
+            const tryProxy = (proxyIndex) => {
+                if (proxyIndex >= proxies.length) {
+                    console.warn('🥒 All CORS proxies failed, using fallback channels');
+                    resolve(this.getFallbackChannels());
+                    return;
+                }
+
+                const proxyUrl = proxies[proxyIndex] + encodeURIComponent(channelsUrl);
+                console.log(`🥒 Trying CORS proxy ${proxyIndex + 1}/${proxies.length}:`, proxyUrl);
+
+                GM_xmlhttpRequest({
+                    method: 'GET',
+                    url: proxyUrl,
+                    timeout: 8000,
+                    onload: (response) => {
+                        try {
+                            if (response.status === 200) {
+                                const data = JSON.parse(response.responseText);
+                                if (data.monitoredChannels && Array.isArray(data.monitoredChannels)) {
+                                    console.log(`🥒 Fetched channels via CORS proxy ${proxyIndex + 1}:`, data.monitoredChannels);
+                                    resolve(data.monitoredChannels);
+                                    return;
+                                }
+                            }
+                        } catch (error) {
+                            console.warn(`🥒 Error parsing proxy response ${proxyIndex + 1}:`, error);
+                        }
+                        tryProxy(proxyIndex + 1);
+                    },
+                    onerror: (error) => {
+                        console.warn(`🥒 CORS proxy ${proxyIndex + 1} failed:`, error);
+                        tryProxy(proxyIndex + 1);
+                    },
+                    ontimeout: () => {
+                        console.warn(`🥒 CORS proxy ${proxyIndex + 1} timeout`);
+                        tryProxy(proxyIndex + 1);
+                    }
+                });
+            };
+
+            tryProxy(0);
         }
 
         /**
@@ -2974,13 +3071,24 @@
          * Load Kick stream content
          */
         loadKickStreamContent(channel, playerElement) {
-            // Use Kick's official embed format - simple and clean!
-            const embedUrl = `https://player.kick.com/${channel}`;
+            // Use Kick's official embed format with CSP workarounds
+            let embedUrl = `https://player.kick.com/${channel}`;
+
+            // On strict CSP sites, try alternative embedding methods
+            if (this.isStrictCSPSite()) {
+                console.log(`🥒 Strict CSP detected for ${channel}, trying alternative embedding`);
+                embedUrl = `https://kick.com/${channel}/embed`;
+            }
+
             const iframe = document.createElement('iframe');
             iframe.src = embedUrl;
             iframe.frameBorder = '0';
             iframe.scrolling = 'no';
             iframe.allowFullscreen = true;
+
+            // Add CSP-friendly attributes
+            iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-presentation');
+            iframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen');
 
             // Try additional mute attributes (may not work due to cross-origin)
             iframe.setAttribute('muted', 'true');
@@ -3017,17 +3125,8 @@
             };
 
             iframe.onerror = () => {
-                console.error(`🥒 Iframe failed to load for ${channel} - likely CSP blocked`);
-                // Show error message to user
-                playerElement.innerHTML = `
-                    <div style="color: #ff6b6b; text-align: center; padding: 20px;">
-                        <div>🚫 Stream blocked by site security</div>
-                        <div style="font-size: 12px; margin-top: 10px;">
-                            This website's security policy prevents embedding streams.<br>
-                            Try opening <a href="https://kick.com/${channel}" target="_blank" style="color: #53fc18;">kick.com/${channel}</a> in a new tab.
-                        </div>
-                    </div>
-                `;
+                console.error(`🥒 Iframe failed to load for ${channel} - CSP blocked`);
+                this.showCSPErrorMessage(playerElement, channel);
             };
 
             // Ensure iframe is visible initially
@@ -3093,6 +3192,32 @@
             // Ensure iframe is visible initially
             iframe.style.opacity = '1';
             iframe.style.visibility = 'visible';
+        }
+
+        /**
+         * Show CSP error message with workarounds
+         */
+        showCSPErrorMessage(playerElement, channel) {
+            const currentSite = window.location.hostname;
+            const isStrictSite = this.isStrictCSPSite();
+
+            playerElement.innerHTML = `
+                <div style="color: #ff6b6b; text-align: center; padding: 20px; background: rgba(0,0,0,0.8); border-radius: 10px;">
+                    <div style="font-size: 16px; margin-bottom: 10px;">🚫 Content Blocked</div>
+                    <div style="font-size: 12px; margin-bottom: 15px;">
+                        ${currentSite} has strict security policies that prevent stream embedding.
+                    </div>
+                    <div style="font-size: 12px; margin-bottom: 10px;">
+                        <strong>Workarounds:</strong>
+                    </div>
+                    <div style="font-size: 11px; line-height: 1.4;">
+                        • Open <a href="https://kick.com/${channel}" target="_blank" style="color: #53fc18; text-decoration: underline;">kick.com/${channel}</a> in a new tab<br>
+                        • Try a different website (like google.com)<br>
+                        • Disable some browser extensions temporarily<br>
+                        • Use a more permissive browser
+                    </div>
+                </div>
+            `;
         }
 
         /**
@@ -3398,6 +3523,11 @@
                     // Add CSP warning for cross-site usage
                     if (this.cspIssues && this.cspIssues.length > 0) {
                         statusText += ' ⚠️ CSP restrictions may limit functionality';
+                    }
+
+                    // Add embedding warning for strict sites
+                    if (this.isStrictCSPSite()) {
+                        statusText += ' 🚫 Embedding blocked - use new tab for streams';
                     }
                 }
 
