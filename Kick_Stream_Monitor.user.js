@@ -912,7 +912,7 @@
 
             // Add logo
             const logo = document.createElement('img');
-            logo.src = 'https://github.com/TheWhiteSasquatch/Pickles/raw/master/image%20(20).jpg';
+            logo.src = 'https://i.imgur.com/LhrC00r.jpeg';
             logo.className = 'ksm-logo';
             logo.alt = 'Pickle Patrol Logo';
             logo.onclick = () => this.toggleButtons();
