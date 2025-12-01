@@ -842,20 +842,25 @@
 
                 /* Grid and Stream Containers */
                 .ksm-grid-container {
-                    position: fixed;
-                    top: 80px;
-                    left: 20px;
-                    width: calc(100vw - 40px);
-                    height: calc(100vh - 100px);
-                    z-index: 9998; /* Lower than GUI but higher than page content */
-                    display: none;
-                    pointer-events: none;
-                    resize: both;
-                    overflow: hidden;
-                    min-width: 400px;
-                    min-height: 300px;
-                    max-width: calc(100vw - 40px);
-                    max-height: calc(100vh - 100px);
+                    position: fixed !important;
+                    top: 80px !important;
+                    left: 20px !important;
+                    width: calc(100vw - 40px) !important;
+                    height: calc(100vh - 100px) !important;
+                    z-index: 9998 !important;
+                    display: none !important;
+                    pointer-events: none !important;
+                    resize: both !important;
+                    overflow: hidden !important;
+                    min-width: 400px !important;
+                    min-height: 300px !important;
+                    max-width: calc(100vw - 40px) !important;
+                    max-height: calc(100vh - 100px) !important;
+                    background: transparent !important;
+                    border: none !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                    box-sizing: border-box !important;
                 }
 
                 .ksm-grid-container::after {
@@ -897,25 +902,30 @@
 
                 .ksm-stream-grid {
                     display: grid;
-                    gap: 10px;
+                    gap: 12px;
                     height: 100%;
                     pointer-events: auto;
-                    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-                    grid-auto-rows: minmax(200px, auto);
-                    align-items: start;
+                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                    grid-auto-rows: minmax(200px, 1fr);
+                    align-items: stretch;
                     justify-items: stretch;
+                    padding: 8px;
+                    box-sizing: border-box;
                 }
 
                 .ksm-stream-container {
                     background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
                     border: 3px solid #333;
-                    border-radius: 15px;
+                    border-radius: 12px;
                     overflow: hidden;
                     display: flex;
                     flex-direction: column;
                     min-height: 200px;
                     box-shadow: 0 6px 20px rgba(0,0,0,0.6);
                     transition: all 0.3s ease;
+                    position: relative;
+                    margin: 0;
+                    padding: 0;
                 }
 
                 .ksm-stream-container:hover {
@@ -927,6 +937,18 @@
                     border-color: #53fc18;
                     box-shadow: 0 0 30px rgba(83, 252, 24, 0.4), 0 8px 25px rgba(0,0,0,0.7);
                     background: linear-gradient(135deg, #1a2a1a, #2a3a2a);
+                }
+
+                /* Ensure proper stream container sizing */
+                .ksm-stream-container > * {
+                    flex-shrink: 0;
+                }
+
+                .ksm-stream-container .ksm-stream-content {
+                    flex: 1;
+                    min-height: 0;
+                    display: flex;
+                    flex-direction: column;
                 }
 
                 .ksm-stream-container.facebook {
@@ -1001,23 +1023,40 @@
                     background: #000;
                     position: relative;
                     width: 100%;
-                    height: 0;
-                    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+                    height: 100%;
+                    min-height: 0;
                     overflow: hidden;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                 }
 
                 .ksm-stream-player iframe {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
+                    position: relative;
                     width: 100% !important;
                     height: 100% !important;
                     border: none !important;
                     margin: 0 !important;
                     padding: 0 !important;
                     box-sizing: border-box !important;
-                    min-width: 200px; /* More flexible minimum */
-                    min-height: 150px; /* More flexible minimum */
+                    min-width: 100% !important;
+                    min-height: 100% !important;
+                    max-width: 100% !important;
+                    max-height: 100% !important;
+                    object-fit: contain !important;
+                    display: block !important;
+                    border-radius: 8px !important;
+                    overflow: hidden !important;
+                }
+
+                /* Ensure iframe loads with proper scaling */
+                .ksm-stream-player iframe:not([src]) {
+                    opacity: 0;
+                }
+
+                .ksm-stream-player iframe[src] {
+                    opacity: 1;
+                    transition: opacity 0.3s ease;
                 }
 
 
@@ -2862,7 +2901,7 @@
             const player = document.createElement('div');
             player.className = 'ksm-stream-player';
             player.innerHTML = `
-                <div style="color: #666; text-align: center;">
+                <div style="color: #666; text-align: center; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1;">
                     <div class="ksm-loading"></div>
                     <br>Loading ${channel}...
                     <br><small style="color: #53fc18; font-weight: bold;">▶️ 🔇 Auto-playing muted</small>
@@ -2918,31 +2957,49 @@
 
             this.grid.noStreamsMsg.style.display = 'none';
 
-            // Let CSS handle the responsive layout - remove any JS overrides
+            // Clear any previous manual grid settings to let CSS handle responsive layout
             this.grid.grid.style.gridTemplateColumns = '';
             this.grid.grid.style.gridAutoRows = '';
 
-            // Calculate precise height based on actual content
+            // Force layout recalculation
+            this.grid.grid.style.display = 'none';
+            this.grid.grid.offsetHeight; // Trigger reflow
+            this.grid.grid.style.display = 'grid';
+
+            // Calculate optimal grid dimensions based on stream count
+            const containerWidth = this.grid.container.offsetWidth - 16; // Account for padding
+            const containerHeight = this.grid.container.offsetHeight - 16;
+
+            // Calculate columns based on minimum stream width (300px)
+            const minStreamWidth = 300;
+            const maxColumns = Math.floor(containerWidth / minStreamWidth);
+            const optimalColumns = Math.min(maxColumns, streamCount);
+
+            if (optimalColumns > 0) {
+                const columnWidth = Math.max(minStreamWidth, Math.floor(containerWidth / optimalColumns) - 12); // Account for gap
+                this.grid.grid.style.gridTemplateColumns = `repeat(auto-fit, minmax(${columnWidth}px, 1fr))`;
+                console.log(`Grid optimized: ${optimalColumns} columns, ${columnWidth}px min width`);
+            }
+
+            // Adjust container height to fit content better
             if (this.grid.container && this.grid.grid) {
-                // Use a small timeout to let CSS layout settle
                 setTimeout(() => {
                     const gridRect = this.grid.grid.getBoundingClientRect();
                     const containerRect = this.grid.container.getBoundingClientRect();
 
-                    // Only adjust if content is significantly shorter than container
-                    if (gridRect.height > 0 && gridRect.height < containerRect.height - 100) {
-                        // Add minimal padding (just enough for borders/shadows)
-                        const newHeight = Math.max(250, gridRect.height + 30);
-                        this.grid.container.style.height = `${newHeight}px`;
-                        console.log(`Grid height adjusted to fit content: ${newHeight}px`);
+                    // Ensure container is tall enough but not excessively tall
+                    if (gridRect.height > 0) {
+                        const optimalHeight = Math.max(300, Math.min(containerHeight, gridRect.height + 40));
+                        this.grid.container.style.height = `${optimalHeight}px`;
+                        console.log(`Container height optimized: ${optimalHeight}px`);
                     }
-                }, 50);
+                }, 100); // Longer timeout for better measurement
             }
 
             // Update chat heights to match video containers
             this.updateChatHeights();
 
-            console.log(`Grid layout updated: ${streamCount} streams, CSS auto-fit active`);
+            console.log(`Grid layout updated: ${streamCount} streams, optimized for ${optimalColumns || 'auto'} columns`);
         }
 
         /**
