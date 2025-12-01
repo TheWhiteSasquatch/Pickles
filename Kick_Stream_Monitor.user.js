@@ -243,7 +243,7 @@
          */
         async fetchDefaultChannels() {
             return new Promise((resolve) => {
-                const channelsUrl = 'https://raw.githubusercontent.com/TheWhiteSasquatch/Pickles/refs/heads/master/channels.json';
+                const channelsUrl = 'https://raw.githubusercontent.com/TheWhiteSasquatch/Pickles/master/channels.json';
 
                 GM_xmlhttpRequest({
                     method: 'GET',
