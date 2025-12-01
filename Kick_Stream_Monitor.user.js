@@ -57,6 +57,7 @@
             this.gui = null;
             this.grid = null;
             this.streamContainers = new Map();
+            this.facebookFailures = 0; // Track consecutive Facebook monitoring failures
 
             // Load config asynchronously and then initialize
             this.loadConfig().then(config => {
@@ -1010,7 +1011,7 @@
                 </label>
                 <label class="ksm-toggle">
                     <input type="checkbox" id="ksm-facebook-enabled" ${this.config.platforms.facebook.enabled ? 'checked' : ''}>
-                    📘 Enable Facebook Live Monitoring
+                    📘 Enable Facebook Live Monitoring (⚠️ May be unreliable due to blocking)
                 </label>
                 <div class="ksm-input-group">
                     <label for="ksm-facebook-poll-interval">Facebook Poll Interval (seconds):</label>
@@ -2279,11 +2280,17 @@
                 timeout: 10000,
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
                     'Accept-Language': 'en-US,en;q=0.9',
-                    'Accept-Encoding': 'gzip, deflate',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Cache-Control': 'max-age=0',
                     'Connection': 'keep-alive',
-                    'Upgrade-Insecure-Requests': '1'
+                    'Upgrade-Insecure-Requests': '1',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'none',
+                    'Sec-Fetch-User': '?1',
+                    'DNT': '1'
                 },
                 onload: (response) => {
                     if (response.status === 200) {
@@ -2315,10 +2322,12 @@
                     console.error(`📘 Facebook error for ${channel} (attempt ${retryCount + 1}):`, error);
 
                     if (retryCount < this.config.maxRetries) {
+                        // Use longer delay for Facebook (15 seconds) since they block aggressively
                         setTimeout(() => {
                             this.checkFacebookChannelStatus(channel, retryCount + 1);
-                        }, this.config.retryDelay);
+                        }, 15000);
                     } else {
+                        console.warn(`📘 Facebook monitoring failed for ${channel} after ${this.config.maxRetries + 1} attempts - channel will be marked offline`);
                         this.handleChannelStatus(channel, false, 'facebook');
                     }
                 },
@@ -2326,10 +2335,12 @@
                     console.warn(`📘 Facebook timeout for ${channel} (attempt ${retryCount + 1})`);
 
                     if (retryCount < this.config.maxRetries) {
+                        // Use longer delay for Facebook (15 seconds) since they block aggressively
                         setTimeout(() => {
                             this.checkFacebookChannelStatus(channel, retryCount + 1);
-                        }, this.config.retryDelay);
+                        }, 15000);
                     } else {
+                        console.warn(`📘 Facebook monitoring failed for ${channel} after ${this.config.maxRetries + 1} attempts - channel will be marked offline`);
                         this.handleChannelStatus(channel, false, 'facebook');
                     }
                 }
