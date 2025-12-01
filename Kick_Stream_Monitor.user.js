@@ -1609,6 +1609,7 @@
          * Create the stream grid container
          */
         createGrid() {
+            console.log('🥒 Creating stream grid container');
             // Remove any existing grid containers
             const existingContainer = document.getElementById('ksm-grid-container');
             if (existingContainer) {
@@ -1683,9 +1684,11 @@
          * Show/hide the stream grid
          */
         toggleGrid(show = null) {
+            console.log(`🥒 toggleGrid called with show=${show}`);
+
             // Ensure grid exists
             if (!this.grid || !this.grid.container) {
-                console.log('Grid not available for toggle');
+                console.log('🥒 Grid not available for toggle');
                 return;
             }
 
@@ -1693,12 +1696,17 @@
                 show = !this.grid.container.classList.contains('active');
             }
 
+            const totalStreams = this.getTotalLiveStreams();
+            console.log(`🥒 toggleGrid: show=${show}, totalStreams=${totalStreams}`);
+
             // Only show grid if there are live streams
-            if (show && this.liveStreams.size > 0) {
+            if (show && totalStreams > 0) {
+                console.log('🥒 Showing grid (has live streams)');
                 this.grid.container.classList.add('active');
                 // Update GUI position when grid is shown
                 setTimeout(() => this.updateGUIPosition(), 10);
             } else {
+                console.log('🥒 Hiding grid (no live streams or show=false)');
                 this.grid.container.classList.remove('active');
                 // Reset GUI to default position when grid is hidden
                 if (this.gui && this.gui.container) {
@@ -2793,11 +2801,13 @@
          * Handle stream going live
          */
         onStreamLive(channel, platform = 'kick', wasEmpty = false) {
-            console.log(`Adding ${channel} to grid`);
+            console.log(`🥒 STREAM LIVE: Adding ${channel} (${platform}) to grid`);
+            console.log(`🥒 Total live streams: ${this.getTotalLiveStreams()}`);
+            console.log(`🥒 Live streams map:`, this.liveStreams);
 
             // Double-check that this channel is actually in our live streams set
             if (!this.isChannelLive(channel)) {
-                console.warn(`${channel} not in live streams set, skipping grid addition`);
+                console.warn(`🥒 ${channel} not in live streams set, skipping grid addition`);
                 return;
             }
 
@@ -2933,11 +2943,12 @@
 
             // Add to grid
             if (this.grid && this.grid.grid) {
-                console.log(`Adding ${channel} container to grid`);
+                console.log(`🥒 Adding ${channel} container to grid`);
                 this.grid.grid.appendChild(container);
                 this.streamContainers.set(channel, container);
+                console.log(`🥒 Container added. Total containers: ${this.streamContainers.size}`);
             } else {
-                console.error(`Grid not available for ${channel}`);
+                console.error(`🥒 Grid not available for ${channel}`);
             }
 
             // Load stream content
