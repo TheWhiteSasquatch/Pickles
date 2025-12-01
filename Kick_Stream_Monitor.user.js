@@ -82,12 +82,96 @@
         init() {
             console.log('🚔 Pickle Patrol initializing... Time to pickle some streams!');
 
+            // Create persistent elements immediately for visual continuity
+            this.createPersistentElements();
+
             // Wait for page load
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', () => this.onPageLoad());
             } else {
                 this.onPageLoad();
             }
+        }
+
+        /**
+         * Create persistent elements early for visual continuity
+         */
+        createPersistentElements() {
+            // Only create if not already exists (prevent duplicates)
+            if (document.getElementById('ksm-persistent-container')) {
+                return;
+            }
+
+            // Create a persistent container that survives navigation
+            const persistentContainer = document.createElement('div');
+            persistentContainer.id = 'ksm-persistent-container';
+            persistentContainer.style.cssText = `
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                pointer-events: none !important;
+                z-index: 9999 !important;
+                opacity: 1 !important;
+            `;
+
+            // Add to body immediately if available, otherwise to documentElement
+            if (document.body) {
+                document.body.appendChild(persistentContainer);
+            } else if (document.documentElement) {
+                document.documentElement.appendChild(persistentContainer);
+            }
+
+            // Set up mutation observer to maintain elements
+            this.setupPersistenceObserver();
+        }
+
+        /**
+         * Set up mutation observer for element persistence
+         */
+        setupPersistenceObserver() {
+            // Watch for DOM changes that might remove our elements
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'childList') {
+                        // Check if our persistent container was removed
+                        const persistentContainer = document.getElementById('ksm-persistent-container');
+                        if (!persistentContainer && document.body) {
+                            console.log('🥒 Restoring persistent container');
+                            this.createPersistentElements();
+                        }
+
+                        // Check if main GUI container was removed
+                        const guiContainer = document.querySelector('.ksm-container');
+                        if (!guiContainer && this.gui && this.gui.container && document.body) {
+                            console.log('🥒 Restoring GUI container');
+                            document.body.appendChild(this.gui.container);
+                        }
+
+                        // Check if grid container was removed
+                        const gridContainer = document.getElementById('ksm-grid-container');
+                        if (!gridContainer && this.grid && this.grid.container && document.body) {
+                            console.log('🥒 Restoring grid container');
+                            document.body.appendChild(this.grid.container);
+                        }
+                    }
+                });
+            });
+
+            // Start observing
+            if (document.body) {
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
+            }
+
+            // Also observe documentElement for early changes
+            observer.observe(document.documentElement, {
+                childList: true,
+                subtree: false
+            });
         }
 
         /**
@@ -366,6 +450,48 @@
         }
 
         /**
+         * Save GUI position and state for persistence
+         */
+        saveGUIState() {
+            if (this.gui && this.gui.container) {
+                const rect = this.gui.container.getBoundingClientRect();
+                const guiState = {
+                    position: {
+                        top: this.gui.container.style.top || '20px',
+                        right: this.gui.container.style.right || '20px',
+                        left: this.gui.container.style.left || 'auto'
+                    },
+                    buttonsVisible: this.gui.container.querySelector('.ksm-buttons')?.classList.contains('show') || false,
+                    panelVisible: this.gui.panel?.classList.contains('show') || false
+                };
+                GM_setValue('ksm_gui_state', guiState);
+            }
+        }
+
+        /**
+         * Restore GUI position and state from storage
+         */
+        restoreGUIState() {
+            const guiState = GM_getValue('ksm_gui_state');
+            if (guiState && this.gui && this.gui.container) {
+                // Restore position
+                if (guiState.position) {
+                    this.gui.container.style.top = guiState.position.top;
+                    this.gui.container.style.right = guiState.position.right;
+                    this.gui.container.style.left = guiState.position.left;
+                }
+
+                // Restore visibility states
+                if (guiState.buttonsVisible && this.gui.buttonsContainer) {
+                    this.gui.buttonsContainer.classList.add('show');
+                }
+                if (guiState.panelVisible && this.gui.panel) {
+                    this.gui.panel.classList.add('show');
+                }
+            }
+        }
+
+        /**
          * Create the GUI interface
          */
         createGUI() {
@@ -379,16 +505,19 @@
             // Add CSS styles
             GM_addStyle(`
                 .ksm-container {
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    z-index: 10000;
-                    font-family: 'Comic Sans MS', cursive, Arial, sans-serif;
-                    font-size: 14px;
-                    text-align: center;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
+                    position: fixed !important;
+                    top: 20px !important;
+                    right: 20px !important;
+                    z-index: 10000 !important;
+                    font-family: 'Comic Sans MS', cursive, Arial, sans-serif !important;
+                    font-size: 14px !important;
+                    text-align: center !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    pointer-events: auto !important;
+                    opacity: 1 !important;
+                    visibility: visible !important;
                 }
 
                 .ksm-logo {
@@ -406,6 +535,16 @@
                 .ksm-logo:hover {
                     opacity: 1;
                     transform: scale(1.1);
+                }
+
+                .ksm-container.dragging {
+                    opacity: 0.8 !important;
+                    transform: scale(1.05) !important;
+                    box-shadow: 0 6px 20px rgba(83, 252, 24, 0.6) !important;
+                }
+
+                .ksm-container.dragging .ksm-logo {
+                    cursor: grabbing !important;
                 }
 
                 .ksm-buttons {
@@ -1225,12 +1364,109 @@
             this.gui.gridButton = gridButton;
             this.gui.panel = panel;
 
+            // Restore saved GUI state for persistence
+            this.restoreGUIState();
+
             // Initialize lists
             this.updateLiveChannelList();
             this.updateChannelList();
 
             // Initialize theme
             this.applyTheme();
+
+            // Make GUI draggable for better persistence
+            this.makeGUIDraggable();
+        }
+
+        /**
+         * Make GUI draggable for persistent positioning
+         */
+        makeGUIDraggable() {
+            if (!this.gui || !this.gui.container) return;
+
+            const container = this.gui.container;
+            let isDragging = false;
+            let startX, startY, startLeft, startTop;
+
+            // Make the logo the drag handle
+            const dragHandle = container.querySelector('.ksm-logo');
+            if (!dragHandle) return;
+
+            dragHandle.style.cursor = 'move';
+            dragHandle.style.userSelect = 'none';
+
+            const handleMouseDown = (e) => {
+                if (e.target !== dragHandle) return; // Only drag from logo
+
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+
+                const rect = container.getBoundingClientRect();
+                startLeft = rect.left;
+                startTop = rect.top;
+
+                // Prevent text selection during drag
+                e.preventDefault();
+
+                // Add drag class for visual feedback
+                container.classList.add('dragging');
+            };
+
+            const handleMouseMove = (e) => {
+                if (!isDragging) return;
+
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+
+                const newLeft = startLeft + deltaX;
+                const newTop = startTop + deltaY;
+
+                // Keep within viewport bounds
+                const maxLeft = window.innerWidth - container.offsetWidth;
+                const maxTop = window.innerHeight - container.offsetHeight;
+
+                container.style.left = Math.max(0, Math.min(newLeft, maxLeft)) + 'px';
+                container.style.top = Math.max(0, Math.min(newTop, maxTop)) + 'px';
+                container.style.right = 'auto'; // Clear right positioning when manually positioned
+            };
+
+            const handleMouseUp = () => {
+                if (!isDragging) return;
+
+                isDragging = false;
+                container.classList.remove('dragging');
+
+                // Save new position for persistence
+                this.saveGUIState();
+            };
+
+            // Add event listeners
+            dragHandle.addEventListener('mousedown', handleMouseDown);
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+
+            // Touch support for mobile
+            dragHandle.addEventListener('touchstart', (e) => {
+                const touch = e.touches[0];
+                handleMouseDown({
+                    target: dragHandle,
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                    preventDefault: () => e.preventDefault()
+                });
+            });
+
+            document.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                const touch = e.touches[0];
+                handleMouseMove({
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+            });
+
+            document.addEventListener('touchend', handleMouseUp);
         }
 
         /**
@@ -1283,6 +1519,8 @@
          */
         togglePanel() {
             this.gui.panel.classList.toggle('show');
+            // Save state for persistence
+            setTimeout(() => this.saveGUIState(), 10);
         }
 
         /**
@@ -1299,6 +1537,9 @@
                     console.log('🥒 Pickle Patrol activated! Starting monitoring...');
                     this.startMonitoring();
                 }
+
+                // Save state for persistence
+                setTimeout(() => this.saveGUIState(), 10);
             }
         }
 
