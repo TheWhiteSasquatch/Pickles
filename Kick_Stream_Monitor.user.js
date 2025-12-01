@@ -1075,6 +1075,37 @@
                 kickHeader.style.fontSize = '13px';
                 channelSection.appendChild(kickHeader);
 
+                // Add Kick channel input
+                const kickAddContainer = document.createElement('div');
+                kickAddContainer.className = 'ksm-input-group';
+                kickAddContainer.style.marginBottom = '8px';
+
+                const kickInput = document.createElement('input');
+                kickInput.type = 'text';
+                kickInput.placeholder = 'Add Kick username (e.g., ppwashington)';
+                kickInput.style.width = 'calc(100% - 60px)';
+                kickInput.style.marginRight = '4px';
+
+                const kickAddBtn = document.createElement('button');
+                kickAddBtn.className = 'ksm-button';
+                kickAddBtn.textContent = 'Add';
+                kickAddBtn.style.fontSize = '12px';
+                kickAddBtn.style.padding = '6px 12px';
+                kickAddBtn.onclick = () => {
+                    const newChannel = kickInput.value.trim().toLowerCase();
+                    if (newChannel && !this.config.platforms.kick.channels.includes(newChannel)) {
+                        this.config.platforms.kick.channels.push(newChannel);
+                        this.saveConfig();
+                        this.updateKickChannelList();
+                        this.updateLiveChannelList();
+                        kickInput.value = '';
+                    }
+                };
+
+                kickAddContainer.appendChild(kickInput);
+                kickAddContainer.appendChild(kickAddBtn);
+                channelSection.appendChild(kickAddContainer);
+
                 const kickChannelList = document.createElement('div');
                 kickChannelList.className = 'ksm-channel-list';
                 kickChannelList.id = 'ksm-kick-channel-list';
@@ -1090,6 +1121,37 @@
                 fbHeader.style.margin = '8px 0 3px 0';
                 fbHeader.style.fontSize = '13px';
                 channelSection.appendChild(fbHeader);
+
+                // Add Facebook channel input
+                const fbAddContainer = document.createElement('div');
+                fbAddContainer.className = 'ksm-input-group';
+                fbAddContainer.style.marginBottom = '8px';
+
+                const fbInput = document.createElement('input');
+                fbInput.type = 'text';
+                fbInput.placeholder = 'Add Facebook username (e.g., NikySal56)';
+                fbInput.style.width = 'calc(100% - 60px)';
+                fbInput.style.marginRight = '4px';
+
+                const fbAddBtn = document.createElement('button');
+                fbAddBtn.className = 'ksm-button';
+                fbAddBtn.textContent = 'Add';
+                fbAddBtn.style.fontSize = '12px';
+                fbAddBtn.style.padding = '6px 12px';
+                fbAddBtn.onclick = () => {
+                    const newChannel = fbInput.value.trim().toLowerCase();
+                    if (newChannel && !this.config.platforms.facebook.channels.includes(newChannel)) {
+                        this.config.platforms.facebook.channels.push(newChannel);
+                        this.saveConfig();
+                        this.updateFacebookChannelList();
+                        this.updateLiveChannelList();
+                        fbInput.value = '';
+                    }
+                };
+
+                fbAddContainer.appendChild(fbInput);
+                fbAddContainer.appendChild(fbAddBtn);
+                channelSection.appendChild(fbAddContainer);
 
                 const fbChannelList = document.createElement('div');
                 fbChannelList.className = 'ksm-channel-list';
@@ -1717,7 +1779,7 @@
         cleanupGrid() {
             const toRemove = [];
             for (const [channel, container] of this.streamContainers) {
-                if (!this.liveStreams.has(channel)) {
+                if (!this.isChannelLive(channel)) {
                     toRemove.push(channel);
                 }
             }
@@ -2168,6 +2230,18 @@
         }
 
         /**
+         * Check if a channel is currently live across all platforms
+         */
+        isChannelLive(channel) {
+            for (const platformStreams of this.liveStreams.values()) {
+                if (platformStreams.has(channel)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
          * Extract Facebook username from current URL if on Facebook
          */
         getCurrentFacebookChannel() {
@@ -2334,7 +2408,7 @@
             console.log(`Adding ${channel} to grid`);
 
             // Double-check that this channel is actually in our live streams set
-            if (!this.liveStreams.has(channel)) {
+            if (!this.isChannelLive(channel)) {
                 console.warn(`${channel} not in live streams set, skipping grid addition`);
                 return;
             }
