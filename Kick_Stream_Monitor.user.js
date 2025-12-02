@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pickle Patrol Stream Monitor
 // @namespace    https://kick.com/
-// @version      1.0.9
+// @version      1.0.10
 // @description  Keep an eye on Kick.com streams with the Pickle Patrol - dynamic grid display and embedded chat!
 // @author       Pickle Sheriff AI
 // @match        *://*/*
@@ -178,11 +178,15 @@
          * Handle page load
          */
         onPageLoad() {
+            console.log('🥒 Pickle Patrol onPageLoad triggered');
+
             // Skip if running in an iframe to prevent recursive initialization
             if (window.self !== window.top) {
                 console.log('Kick Stream Monitor skipping iframe context');
                 return;
             }
+
+            console.log('🥒 Not in iframe, proceeding with initialization');
 
             // Check if already initialized on this page
             if (window.ksmInitialized) {
@@ -190,6 +194,7 @@
                 return;
             }
 
+            console.log('🥒 First time initialization, marking as initialized');
             // Mark as initialized
             window.ksmInitialized = true;
 
@@ -213,6 +218,14 @@
 
             // Initialize resize functionality
             this.initializeResize();
+
+            // Fallback: Create simple logo if main GUI failed
+            setTimeout(() => {
+                if (!document.querySelector('.ksm-container')) {
+                    console.warn('🥒 Main GUI failed to create, creating fallback logo');
+                    this.createFallbackLogo();
+                }
+            }, 1000);
 
             if (isKickPage) {
                 // Full functionality on Kick.com pages - but wait for user interaction
@@ -247,6 +260,22 @@
 
             // Make debug function globally available
             window.ksmDebugConfig = () => this.debugConfig();
+            window.ksmTestFacebookCors = (channel) => {
+                console.log(`📘 Testing CORS proxy for ${channel}`);
+                this.checkFacebookViaCorsProxy(channel, 0);
+            };
+            window.ksmDebugGUI = () => {
+                console.log('🥒 === GUI DEBUG ===');
+                console.log('GUI object:', this.gui);
+                console.log('GUI container exists:', !!this.gui?.container);
+                console.log('GUI container in DOM:', !!document.querySelector('.ksm-container'));
+                console.log('Body exists:', !!document.body);
+                console.log('Document ready state:', document.readyState);
+                console.log('Is in iframe:', window.self !== window.top);
+                console.log('Current URL:', window.location.href);
+                console.log('===================');
+                return this.gui;
+            };
         }
 
 
@@ -423,7 +452,9 @@
                     facebook: {
                         enabled: false,
                         channels: [],
-                        pollInterval: 60000 // 1 minute (more frequent due to login requirements)
+                        pollInterval: 60000, // 1 minute (more frequent due to login requirements)
+                        useCorsProxy: true, // Enable CORS proxy to bypass restrictions
+                        corsProxyUrl: 'https://api.codetabs.com/v1/proxy?quest=' // CORS proxy service
                     }
                 }
             };
@@ -495,6 +526,8 @@
          * Create the GUI interface
          */
         createGUI() {
+            console.log('🥒 Creating GUI...');
+
             // Basic GUI skeleton - will be expanded in later phases
             this.gui = {
                 container: null,
@@ -1150,12 +1183,19 @@
                 </label>
                 <label class="ksm-toggle">
                     <input type="checkbox" id="ksm-facebook-enabled" ${this.config.platforms.facebook.enabled ? 'checked' : ''}>
-                    📘 Enable Facebook Live Monitoring (⚠️ May be unreliable due to blocking)
+                    📘 Enable Facebook Live Monitoring (🔒 BLOCKED - Requires Login)
                 </label>
+                <div style="font-size: 11px; color: #888; margin-top: 4px; padding: 6px; background: #222; border-radius: 4px; border-left: 3px solid #4267B2;">
+                    Facebook blocks external access to live streams. Use manual override buttons (🔴) in channel list to mark streams as live.
+                </div>
                 <div class="ksm-input-group">
                     <label for="ksm-facebook-poll-interval">Facebook Poll Interval (seconds):</label>
                     <input type="number" id="ksm-facebook-poll-interval" min="30" max="600" value="${this.config.platforms.facebook.pollInterval / 1000}">
                 </div>
+                <label class="ksm-toggle">
+                    <input type="checkbox" id="ksm-facebook-cors-proxy" ${this.config.platforms.facebook.useCorsProxy ? 'checked' : ''}>
+                    Use CORS Proxy (attempts to bypass blocking)
+                </label>
             `;
 
             // Grid settings section
@@ -1357,6 +1397,7 @@
             container.appendChild(panel);
 
             document.body.appendChild(container);
+            console.log('🥒 GUI container appended to document.body');
 
             this.gui.container = container;
             this.gui.buttonsContainer = buttonsContainer;
@@ -1696,6 +1737,13 @@
                 }
             };
 
+            const facebookCorsProxyToggle = panel.querySelector('#ksm-facebook-cors-proxy');
+            facebookCorsProxyToggle.onchange = (e) => {
+                this.config.platforms.facebook.useCorsProxy = e.target.checked;
+                this.saveConfig();
+                console.log(`📘 CORS proxy ${e.target.checked ? 'enabled' : 'disabled'} for Facebook monitoring`);
+            };
+
             // Actions
             const clearAllBtn = panel.querySelector('#ksm-clear-all');
             clearAllBtn.onclick = () => {
@@ -1856,6 +1904,30 @@
                 statusIndicator.title = isLive ? 'Live' : 'Offline';
                 nameSpan.appendChild(statusIndicator);
 
+                // Manual override button for Facebook (since automatic detection is blocked)
+                const overrideBtn = document.createElement('button');
+                overrideBtn.className = 'ksm-stream-btn';
+                overrideBtn.textContent = '🔴';
+                overrideBtn.title = isLive ? 'Mark as offline (manual override)' : 'Mark as live (manual override)';
+                overrideBtn.style.fontSize = '12px';
+                overrideBtn.style.padding = '2px 6px';
+                overrideBtn.style.marginLeft = '4px';
+                overrideBtn.onclick = () => {
+                    if (isLive) {
+                        // Mark as offline
+                        this.handleChannelStatus(channel, false, 'facebook');
+                        this.updateFacebookChannelList();
+                        this.updateLiveChannelList();
+                        console.log(`📘 Manually marked ${channel} as offline`);
+                    } else {
+                        // Mark as live
+                        this.handleChannelStatus(channel, true, 'facebook');
+                        this.updateFacebookChannelList();
+                        this.updateLiveChannelList();
+                        console.log(`📘 Manually marked ${channel} as live`);
+                    }
+                };
+
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'ksm-remove-channel';
                 removeBtn.textContent = '×';
@@ -1868,6 +1940,7 @@
                 };
 
                 item.appendChild(nameSpan);
+                item.appendChild(overrideBtn);
                 item.appendChild(removeBtn);
                 channelList.appendChild(item);
             });
@@ -2174,8 +2247,8 @@
             if (this.config.platforms.kick.enabled) {
                 const kickChannels = this.config.platforms.kick.channels;
 
-                // Also check current page if it's a Kick channel
-                const currentChannel = this.getCurrentChannel();
+            // Also check current page if it's a Kick channel
+            const currentChannel = this.getCurrentChannel();
                 if (currentChannel && !kickChannels.includes(currentChannel)) {
                     kickChannels.push(currentChannel);
                 }
@@ -2513,6 +2586,12 @@
          * Check Facebook channel status using HTML scraping
          */
         checkFacebookChannelStatus(channel, retryCount = 0) {
+            // Try CORS proxy first if enabled
+            if (this.config.platforms.facebook.useCorsProxy && retryCount === 0) {
+                return this.checkFacebookViaCorsProxy(channel, 0);
+            }
+
+            // Fallback to direct access
             const url = `https://www.facebook.com/${channel}`;
 
             GM_xmlhttpRequest({
@@ -2582,6 +2661,126 @@
                         }, 15000);
                     } else {
                         console.warn(`📘 Facebook monitoring failed for ${channel} after ${this.config.maxRetries + 1} attempts - channel will be marked offline`);
+                        this.handleChannelStatus(channel, false, 'facebook');
+                    }
+                }
+            });
+        }
+
+        checkFacebookViaCorsProxy(channel, retryCount = 0) {
+            // Use CORS proxy to bypass Facebook's restrictions
+            const proxyUrl = this.config.platforms.facebook.corsProxyUrl;
+            const targetUrl = `https://m.facebook.com/${channel}`;
+            const proxiedUrl = proxyUrl + encodeURIComponent(targetUrl);
+
+            console.log(`📘 Trying CORS proxy for ${channel}`);
+
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: proxiedUrl,
+                timeout: 15000,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+                },
+                onload: (response) => {
+                    if (response.status === 200) {
+                        const html = response.responseText;
+                        console.log(`📘 CORS proxy response for ${channel}: ${html.length} chars`);
+
+                        // Check if we got actual Facebook content (not an error page)
+                        if (html.includes('facebook.com') || html.includes('Facebook') ||
+                            html.includes('timeline') || html.includes('post')) {
+
+                            const isLive = this.detectFacebookLiveStatus(html, channel);
+                            console.log(`📘 CORS proxy result for ${channel}: ${isLive ? 'LIVE' : 'OFFLINE'}`);
+                            this.handleChannelStatus(channel, isLive, 'facebook');
+
+                        } else {
+                            console.warn(`📘 CORS proxy blocked - Facebook returned error page`);
+                            // Fallback to direct access
+                            setTimeout(() => this.checkFacebookDirect(channel, 0), 1000);
+                        }
+                    } else {
+                        console.warn(`📘 CORS proxy failed: HTTP ${response.status}`);
+                        // Fallback to direct access
+                        setTimeout(() => this.checkFacebookDirect(channel, 0), 1000);
+                    }
+                },
+                onerror: (error) => {
+                    console.error(`📘 CORS proxy error:`, error);
+                    // Fallback to direct access
+                    setTimeout(() => this.checkFacebookDirect(channel, 0), 1000);
+                },
+                ontimeout: () => {
+                    console.warn(`📘 CORS proxy timeout`);
+                    // Fallback to direct access
+                    setTimeout(() => this.checkFacebookDirect(channel, 0), 1000);
+                }
+            });
+        }
+
+        checkFacebookDirect(channel, retryCount = 0) {
+            // Direct access fallback (will likely fail due to CORS)
+            const url = `https://www.facebook.com/${channel}`;
+
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: url,
+                timeout: 10000,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Cache-Control': 'max-age=0',
+                    'Connection': 'keep-alive',
+                    'Upgrade-Insecure-Requests': '1',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'none',
+                    'Sec-Fetch-User': '?1',
+                    'DNT': '1'
+                },
+                onload: (response) => {
+                    if (response.status === 200) {
+                        const html = response.responseText;
+                        const isLoginPage = html.includes('login') || html.includes('Log In') || html.includes('Sign Up');
+                        const isErrorPage = html.includes('error') || html.includes('not found') || html.includes('404');
+
+                        if (isLoginPage) {
+                            console.warn(`📘 Facebook login required for ${channel}`);
+                            this.handleChannelStatus(channel, false, 'facebook');
+                        } else if (isErrorPage) {
+                            console.warn(`📘 Facebook access blocked for ${channel}`);
+                            this.handleChannelStatus(channel, false, 'facebook');
+                        } else {
+                            const isLive = this.detectFacebookLiveStatus(html, channel);
+                            this.handleChannelStatus(channel, isLive, 'facebook');
+                        }
+                    } else {
+                        console.warn(`📘 Facebook HTTP ${response.status} for ${channel}`);
+                        this.handleChannelStatus(channel, false, 'facebook');
+                    }
+                },
+                onerror: (error) => {
+                    console.error(`📘 Facebook error for ${channel} (attempt ${retryCount + 1})`);
+                    if (retryCount < this.config.maxRetries) {
+                        setTimeout(() => {
+                            this.checkFacebookDirect(channel, retryCount + 1);
+                        }, 15000);
+                    } else {
+                        console.warn(`📘 Facebook monitoring failed for ${channel} - blocked by CORS`);
+                        this.handleChannelStatus(channel, false, 'facebook');
+                    }
+                },
+                ontimeout: () => {
+                    console.warn(`📘 Facebook timeout for ${channel}`);
+                    if (retryCount < this.config.maxRetries) {
+                        setTimeout(() => {
+                            this.checkFacebookDirect(channel, retryCount + 1);
+                        }, 15000);
+                    } else {
                         this.handleChannelStatus(channel, false, 'facebook');
                     }
                 }
@@ -2872,6 +3071,65 @@
                 this.gui.container.style.left = 'auto';
                 this.gui.container.style.right = '20px';
                 console.log('🥒 GUI moved back to right side');
+            }
+        }
+
+        /**
+         * Create a simple fallback logo if main GUI fails
+         */
+        createFallbackLogo() {
+            console.log('🥒 Creating fallback logo');
+
+            // Remove any existing fallback logos
+            const existingFallback = document.querySelector('.ksm-fallback-logo');
+            if (existingFallback) {
+                existingFallback.remove();
+            }
+
+            const logo = document.createElement('img');
+            logo.src = 'https://i.imgur.com/LhrC00r.jpeg';
+            logo.className = 'ksm-fallback-logo';
+            logo.alt = 'Pickle Patrol Logo (Fallback)';
+            logo.title = 'Pickle Patrol - Click to retry GUI creation';
+
+            logo.style.cssText = `
+                position: fixed !important;
+                top: 20px !important;
+                right: 20px !important;
+                width: 50px !important;
+                height: 50px !important;
+                border-radius: 50% !important;
+                cursor: pointer !important;
+                transition: all 0.3s ease !important;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+                border: 2px solid #53fc18 !important;
+                background: #f0f8e7 !important;
+                opacity: 0.9 !important;
+                z-index: 10000 !important;
+            `;
+
+            logo.onmouseover = () => {
+                logo.style.opacity = '1';
+                logo.style.transform = 'scale(1.1)';
+            };
+
+            logo.onmouseout = () => {
+                logo.style.opacity = '0.9';
+                logo.style.transform = 'scale(1)';
+            };
+
+            logo.onclick = () => {
+                console.log('🥒 Fallback logo clicked - retrying GUI creation');
+                logo.remove();
+                this.createGUI();
+            };
+
+            // Add to page
+            if (document.body) {
+                document.body.appendChild(logo);
+                console.log('🥒 Fallback logo created successfully');
+            } else {
+                console.error('🥒 Cannot create fallback logo - no document.body');
             }
         }
 
@@ -3381,7 +3639,7 @@
                     }
                     if (this.monitoringInterval) {
                         statusText += ' | Monitoring active';
-                    } else {
+                } else {
                         statusText += ' | Click logo to start monitoring';
                     }
                 } else {
