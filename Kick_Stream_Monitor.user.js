@@ -17,8 +17,6 @@
 // @connect      web.kick.com
 // @connect      player.kick.com
 // @connect      raw.githubusercontent.com
-// @connect      cors-anywhere.herokuapp.com
-// @connect      api.allorigins.win
 // @run-at       document-start
 // ==/UserScript==
 
@@ -203,9 +201,6 @@
 
             // Check if this is a Kick.com page - only run full monitoring here
             const isKickPage = window.location.hostname.includes('kick.com');
-            const isStrictSite = this.isStrictCSPSite();
-
-            console.log(`🥒 Pickle Patrol on ${window.location.hostname} - CSP Strict: ${isStrictSite}`);
 
             // Clean up any existing instances first
             this.cleanupExistingInstances();
@@ -233,12 +228,6 @@
                     console.log('🥒 Cross-site patrol ready - click logo to start monitoring');
                 }
 
-                // Log CSP information
-                if (isStrictSite) {
-                    console.warn('🥒 Strict CSP site detected - stream embedding may be blocked');
-                    console.log('🥒 Try: Opening streams in new tabs, or using less restrictive websites');
-                }
-
                 // Store CSP issues for status display
                 this.cspIssues = cspIssues;
             }
@@ -258,43 +247,12 @@
 
             // Make debug function globally available
             window.ksmDebugConfig = () => this.debugConfig();
+            window.ksmTestFacebookCors = (channel) => {
+                console.log(`📘 Testing CORS proxy for ${channel}`);
+                this.checkFacebookViaCorsProxy(channel, 0);
+            };
         }
 
-
-        /**
-         * Check if current site has strict CSP that blocks embedding
-         */
-        isStrictCSPSite() {
-            const hostname = window.location.hostname;
-
-            // Known strict CSP sites
-            const strictSites = [
-                'x.com', 'twitter.com',
-                'facebook.com', 'instagram.com',
-                'linkedin.com', 'tiktok.com',
-                'youtube.com', 'twitch.tv',
-                'reddit.com', 'discord.com'
-            ];
-
-            if (strictSites.some(site => hostname.includes(site))) {
-                return true;
-            }
-
-            // Check for CSP headers that block frames
-            try {
-                const cspMeta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
-                if (cspMeta) {
-                    const cspContent = cspMeta.getAttribute('content');
-                    if (cspContent && (cspContent.includes('frame-src') || cspContent.includes('default-src'))) {
-                        return true;
-                    }
-                }
-            } catch (error) {
-                // Ignore CSP check errors
-            }
-
-            return false;
-        }
 
         /**
          * Check Content Security Policy compatibility
@@ -369,13 +327,12 @@
         }
 
         /**
-         * Fetch default channels from GitHub with CORS proxy fallback
+         * Fetch default channels from GitHub
          */
         async fetchDefaultChannels() {
             return new Promise((resolve) => {
                 const channelsUrl = 'https://raw.githubusercontent.com/TheWhiteSasquatch/Pickles/master/channels.json';
 
-                // Try direct request first
                 GM_xmlhttpRequest({
                     method: 'GET',
                     url: channelsUrl,
@@ -385,7 +342,7 @@
                             if (response.status === 200) {
                                 const data = JSON.parse(response.responseText);
                                 if (data.monitoredChannels && Array.isArray(data.monitoredChannels)) {
-                                    console.log('🥒 Fetched channels from GitHub (direct):', data.monitoredChannels);
+                                    console.log('🥒 Fetched channels from GitHub:', data.monitoredChannels);
                                     resolve(data.monitoredChannels);
                                     return;
                                 }
@@ -393,74 +350,24 @@
                         } catch (error) {
                             console.warn('🥒 Error parsing channels JSON:', error);
                         }
-                        // Try CORS proxy fallback
-                        this.fetchChannelsWithProxy(resolve);
+                        // Fallback to hardcoded list
+                        console.log('🥒 Using fallback hardcoded channels');
+                        resolve(this.getFallbackChannels());
                     },
                     onerror: (error) => {
-                        console.warn('🥒 Direct request blocked, trying CORS proxy...');
-                        this.fetchChannelsWithProxy(resolve);
+                        console.warn('🥒 Failed to fetch channels from GitHub:', {
+                            status: error.status,
+                            statusText: error.statusText,
+                            url: channelsUrl
+                        });
+                        resolve(this.getFallbackChannels());
                     },
                     ontimeout: () => {
-                        console.warn('🥒 Direct request timeout, trying CORS proxy...');
-                        this.fetchChannelsWithProxy(resolve);
+                        console.warn('🥒 Timeout fetching channels from GitHub (check @connect permissions)');
+                        resolve(this.getFallbackChannels());
                     }
                 });
             });
-        }
-
-        /**
-         * Fetch channels using CORS proxy as fallback
-         */
-        fetchChannelsWithProxy(resolve) {
-            // Try multiple free CORS proxies
-            const proxies = [
-                'https://api.allorigins.win/raw?url=',
-                'https://cors-anywhere.herokuapp.com/'
-            ];
-
-            const channelsUrl = 'https://raw.githubusercontent.com/TheWhiteSasquatch/Pickles/master/channels.json';
-
-            const tryProxy = (proxyIndex) => {
-                if (proxyIndex >= proxies.length) {
-                    console.warn('🥒 All CORS proxies failed, using fallback channels');
-                    resolve(this.getFallbackChannels());
-                    return;
-                }
-
-                const proxyUrl = proxies[proxyIndex] + encodeURIComponent(channelsUrl);
-                console.log(`🥒 Trying CORS proxy ${proxyIndex + 1}/${proxies.length}:`, proxyUrl);
-
-                GM_xmlhttpRequest({
-                    method: 'GET',
-                    url: proxyUrl,
-                    timeout: 8000,
-                    onload: (response) => {
-                        try {
-                            if (response.status === 200) {
-                                const data = JSON.parse(response.responseText);
-                                if (data.monitoredChannels && Array.isArray(data.monitoredChannels)) {
-                                    console.log(`🥒 Fetched channels via CORS proxy ${proxyIndex + 1}:`, data.monitoredChannels);
-                                    resolve(data.monitoredChannels);
-                                    return;
-                                }
-                            }
-                        } catch (error) {
-                            console.warn(`🥒 Error parsing proxy response ${proxyIndex + 1}:`, error);
-                        }
-                        tryProxy(proxyIndex + 1);
-                    },
-                    onerror: (error) => {
-                        console.warn(`🥒 CORS proxy ${proxyIndex + 1} failed:`, error);
-                        tryProxy(proxyIndex + 1);
-                    },
-                    ontimeout: () => {
-                        console.warn(`🥒 CORS proxy ${proxyIndex + 1} timeout`);
-                        tryProxy(proxyIndex + 1);
-                    }
-                });
-            };
-
-            tryProxy(0);
         }
 
         /**
@@ -520,7 +427,9 @@
                     facebook: {
                         enabled: false,
                         channels: [],
-                        pollInterval: 60000 // 1 minute (more frequent due to login requirements)
+                        pollInterval: 60000, // 1 minute (more frequent due to login requirements)
+                        useCorsProxy: true, // Enable CORS proxy to bypass restrictions
+                        corsProxyUrl: 'https://api.codetabs.com/v1/proxy?quest=' // CORS proxy service
                     }
                 }
             };
@@ -842,25 +751,20 @@
 
                 /* Grid and Stream Containers */
                 .ksm-grid-container {
-                    position: fixed !important;
-                    top: 80px !important;
-                    left: 20px !important;
-                    width: calc(100vw - 40px) !important;
-                    height: calc(100vh - 100px) !important;
-                    z-index: 9998 !important;
-                    display: none !important;
-                    pointer-events: none !important;
-                    resize: both !important;
-                    overflow: hidden !important;
-                    min-width: 400px !important;
-                    min-height: 300px !important;
-                    max-width: calc(100vw - 40px) !important;
-                    max-height: calc(100vh - 100px) !important;
-                    background: transparent !important;
-                    border: none !important;
-                    padding: 0 !important;
-                    margin: 0 !important;
-                    box-sizing: border-box !important;
+                    position: fixed;
+                    top: 80px;
+                    left: 20px;
+                    width: calc(100vw - 40px);
+                    height: calc(100vh - 100px);
+                    z-index: 9998; /* Lower than GUI but higher than page content */
+                    display: none;
+                    pointer-events: none;
+                    resize: both;
+                    overflow: hidden;
+                    min-width: 400px;
+                    min-height: 300px;
+                    max-width: calc(100vw - 40px);
+                    max-height: calc(100vh - 100px);
                 }
 
                 .ksm-grid-container::after {
@@ -902,30 +806,25 @@
 
                 .ksm-stream-grid {
                     display: grid;
-                    gap: 12px;
+                    gap: 10px;
                     height: 100%;
                     pointer-events: auto;
-                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                    grid-auto-rows: minmax(200px, 1fr);
-                    align-items: stretch;
+                    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                    grid-auto-rows: minmax(200px, auto);
+                    align-items: start;
                     justify-items: stretch;
-                    padding: 8px;
-                    box-sizing: border-box;
                 }
 
                 .ksm-stream-container {
                     background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
                     border: 3px solid #333;
-                    border-radius: 12px;
+                    border-radius: 15px;
                     overflow: hidden;
                     display: flex;
                     flex-direction: column;
                     min-height: 200px;
                     box-shadow: 0 6px 20px rgba(0,0,0,0.6);
                     transition: all 0.3s ease;
-                    position: relative;
-                    margin: 0;
-                    padding: 0;
                 }
 
                 .ksm-stream-container:hover {
@@ -937,18 +836,6 @@
                     border-color: #53fc18;
                     box-shadow: 0 0 30px rgba(83, 252, 24, 0.4), 0 8px 25px rgba(0,0,0,0.7);
                     background: linear-gradient(135deg, #1a2a1a, #2a3a2a);
-                }
-
-                /* Ensure proper stream container sizing */
-                .ksm-stream-container > * {
-                    flex-shrink: 0;
-                }
-
-                .ksm-stream-container .ksm-stream-content {
-                    flex: 1;
-                    min-height: 0;
-                    display: flex;
-                    flex-direction: column;
                 }
 
                 .ksm-stream-container.facebook {
@@ -1023,40 +910,23 @@
                     background: #000;
                     position: relative;
                     width: 100%;
-                    height: 100%;
-                    min-height: 0;
+                    height: 0;
+                    padding-bottom: 56.25%; /* 16:9 aspect ratio */
                     overflow: hidden;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
                 }
 
                 .ksm-stream-player iframe {
-                    position: relative;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
                     width: 100% !important;
                     height: 100% !important;
                     border: none !important;
                     margin: 0 !important;
                     padding: 0 !important;
                     box-sizing: border-box !important;
-                    min-width: 100% !important;
-                    min-height: 100% !important;
-                    max-width: 100% !important;
-                    max-height: 100% !important;
-                    object-fit: contain !important;
-                    display: block !important;
-                    border-radius: 8px !important;
-                    overflow: hidden !important;
-                }
-
-                /* Ensure iframe loads with proper scaling */
-                .ksm-stream-player iframe:not([src]) {
-                    opacity: 0;
-                }
-
-                .ksm-stream-player iframe[src] {
-                    opacity: 1;
-                    transition: opacity 0.3s ease;
+                    min-width: 200px; /* More flexible minimum */
+                    min-height: 150px; /* More flexible minimum */
                 }
 
 
@@ -1286,12 +1156,19 @@
                 </label>
                 <label class="ksm-toggle">
                     <input type="checkbox" id="ksm-facebook-enabled" ${this.config.platforms.facebook.enabled ? 'checked' : ''}>
-                    📘 Enable Facebook Live Monitoring (⚠️ May be unreliable due to blocking)
+                    📘 Enable Facebook Live Monitoring (🔒 BLOCKED - Requires Login)
                 </label>
+                <div style="font-size: 11px; color: #888; margin-top: 4px; padding: 6px; background: #222; border-radius: 4px; border-left: 3px solid #4267B2;">
+                    Facebook blocks external access to live streams. Use manual override buttons (🔴) in channel list to mark streams as live.
+                </div>
                 <div class="ksm-input-group">
                     <label for="ksm-facebook-poll-interval">Facebook Poll Interval (seconds):</label>
                     <input type="number" id="ksm-facebook-poll-interval" min="30" max="600" value="${this.config.platforms.facebook.pollInterval / 1000}">
                 </div>
+                <label class="ksm-toggle">
+                    <input type="checkbox" id="ksm-facebook-cors-proxy" ${this.config.platforms.facebook.useCorsProxy ? 'checked' : ''}>
+                    Use CORS Proxy (attempts to bypass blocking)
+                </label>
             `;
 
             // Grid settings section
@@ -1609,7 +1486,6 @@
          * Create the stream grid container
          */
         createGrid() {
-            console.log('🥒 Creating stream grid container');
             // Remove any existing grid containers
             const existingContainer = document.getElementById('ksm-grid-container');
             if (existingContainer) {
@@ -1684,11 +1560,9 @@
          * Show/hide the stream grid
          */
         toggleGrid(show = null) {
-            console.log(`🥒 toggleGrid called with show=${show}`);
-
             // Ensure grid exists
             if (!this.grid || !this.grid.container) {
-                console.log('🥒 Grid not available for toggle');
+                console.log('Grid not available for toggle');
                 return;
             }
 
@@ -1696,17 +1570,12 @@
                 show = !this.grid.container.classList.contains('active');
             }
 
-            const totalStreams = this.getTotalLiveStreams();
-            console.log(`🥒 toggleGrid: show=${show}, totalStreams=${totalStreams}`);
-
             // Only show grid if there are live streams
-            if (show && totalStreams > 0) {
-                console.log('🥒 Showing grid (has live streams)');
+            if (show && this.liveStreams.size > 0) {
                 this.grid.container.classList.add('active');
                 // Update GUI position when grid is shown
                 setTimeout(() => this.updateGUIPosition(), 10);
             } else {
-                console.log('🥒 Hiding grid (no live streams or show=false)');
                 this.grid.container.classList.remove('active');
                 // Reset GUI to default position when grid is hidden
                 if (this.gui && this.gui.container) {
@@ -1838,6 +1707,13 @@
                     this.config.platforms.facebook.pollInterval = value * 1000;
                     this.saveConfig();
                 }
+            };
+
+            const facebookCorsProxyToggle = panel.querySelector('#ksm-facebook-cors-proxy');
+            facebookCorsProxyToggle.onchange = (e) => {
+                this.config.platforms.facebook.useCorsProxy = e.target.checked;
+                this.saveConfig();
+                console.log(`📘 CORS proxy ${e.target.checked ? 'enabled' : 'disabled'} for Facebook monitoring`);
             };
 
             // Actions
@@ -2000,6 +1876,30 @@
                 statusIndicator.title = isLive ? 'Live' : 'Offline';
                 nameSpan.appendChild(statusIndicator);
 
+                // Manual override button for Facebook (since automatic detection is blocked)
+                const overrideBtn = document.createElement('button');
+                overrideBtn.className = 'ksm-stream-btn';
+                overrideBtn.textContent = '🔴';
+                overrideBtn.title = isLive ? 'Mark as offline (manual override)' : 'Mark as live (manual override)';
+                overrideBtn.style.fontSize = '12px';
+                overrideBtn.style.padding = '2px 6px';
+                overrideBtn.style.marginLeft = '4px';
+                overrideBtn.onclick = () => {
+                    if (isLive) {
+                        // Mark as offline
+                        this.handleChannelStatus(channel, false, 'facebook');
+                        this.updateFacebookChannelList();
+                        this.updateLiveChannelList();
+                        console.log(`📘 Manually marked ${channel} as offline`);
+                    } else {
+                        // Mark as live
+                        this.handleChannelStatus(channel, true, 'facebook');
+                        this.updateFacebookChannelList();
+                        this.updateLiveChannelList();
+                        console.log(`📘 Manually marked ${channel} as live`);
+                    }
+                };
+
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'ksm-remove-channel';
                 removeBtn.textContent = '×';
@@ -2012,6 +1912,7 @@
                 };
 
                 item.appendChild(nameSpan);
+                item.appendChild(overrideBtn);
                 item.appendChild(removeBtn);
                 channelList.appendChild(item);
             });
@@ -2318,8 +2219,8 @@
             if (this.config.platforms.kick.enabled) {
                 const kickChannels = this.config.platforms.kick.channels;
 
-                // Also check current page if it's a Kick channel
-                const currentChannel = this.getCurrentChannel();
+            // Also check current page if it's a Kick channel
+            const currentChannel = this.getCurrentChannel();
                 if (currentChannel && !kickChannels.includes(currentChannel)) {
                     kickChannels.push(currentChannel);
                 }
@@ -2657,6 +2558,12 @@
          * Check Facebook channel status using HTML scraping
          */
         checkFacebookChannelStatus(channel, retryCount = 0) {
+            // Try CORS proxy first if enabled
+            if (this.config.platforms.facebook.useCorsProxy && retryCount === 0) {
+                return this.checkFacebookViaCorsProxy(channel, 0);
+            }
+
+            // Fallback to direct access
             const url = `https://www.facebook.com/${channel}`;
 
             GM_xmlhttpRequest({
@@ -2732,6 +2639,126 @@
             });
         }
 
+        checkFacebookViaCorsProxy(channel, retryCount = 0) {
+            // Use CORS proxy to bypass Facebook's restrictions
+            const proxyUrl = this.config.platforms.facebook.corsProxyUrl;
+            const targetUrl = `https://m.facebook.com/${channel}`;
+            const proxiedUrl = proxyUrl + encodeURIComponent(targetUrl);
+
+            console.log(`📘 Trying CORS proxy for ${channel}`);
+
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: proxiedUrl,
+                timeout: 15000,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+                },
+                onload: (response) => {
+                    if (response.status === 200) {
+                        const html = response.responseText;
+                        console.log(`📘 CORS proxy response for ${channel}: ${html.length} chars`);
+
+                        // Check if we got actual Facebook content (not an error page)
+                        if (html.includes('facebook.com') || html.includes('Facebook') ||
+                            html.includes('timeline') || html.includes('post')) {
+
+                            const isLive = this.detectFacebookLiveStatus(html, channel);
+                            console.log(`📘 CORS proxy result for ${channel}: ${isLive ? 'LIVE' : 'OFFLINE'}`);
+                            this.handleChannelStatus(channel, isLive, 'facebook');
+
+                        } else {
+                            console.warn(`📘 CORS proxy blocked - Facebook returned error page`);
+                            // Fallback to direct access
+                            setTimeout(() => this.checkFacebookDirect(channel, 0), 1000);
+                        }
+                    } else {
+                        console.warn(`📘 CORS proxy failed: HTTP ${response.status}`);
+                        // Fallback to direct access
+                        setTimeout(() => this.checkFacebookDirect(channel, 0), 1000);
+                    }
+                },
+                onerror: (error) => {
+                    console.error(`📘 CORS proxy error:`, error);
+                    // Fallback to direct access
+                    setTimeout(() => this.checkFacebookDirect(channel, 0), 1000);
+                },
+                ontimeout: () => {
+                    console.warn(`📘 CORS proxy timeout`);
+                    // Fallback to direct access
+                    setTimeout(() => this.checkFacebookDirect(channel, 0), 1000);
+                }
+            });
+        }
+
+        checkFacebookDirect(channel, retryCount = 0) {
+            // Direct access fallback (will likely fail due to CORS)
+            const url = `https://www.facebook.com/${channel}`;
+
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: url,
+                timeout: 10000,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Cache-Control': 'max-age=0',
+                    'Connection': 'keep-alive',
+                    'Upgrade-Insecure-Requests': '1',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'none',
+                    'Sec-Fetch-User': '?1',
+                    'DNT': '1'
+                },
+                onload: (response) => {
+                    if (response.status === 200) {
+                        const html = response.responseText;
+                        const isLoginPage = html.includes('login') || html.includes('Log In') || html.includes('Sign Up');
+                        const isErrorPage = html.includes('error') || html.includes('not found') || html.includes('404');
+
+                        if (isLoginPage) {
+                            console.warn(`📘 Facebook login required for ${channel}`);
+                            this.handleChannelStatus(channel, false, 'facebook');
+                        } else if (isErrorPage) {
+                            console.warn(`📘 Facebook access blocked for ${channel}`);
+                            this.handleChannelStatus(channel, false, 'facebook');
+                        } else {
+                            const isLive = this.detectFacebookLiveStatus(html, channel);
+                            this.handleChannelStatus(channel, isLive, 'facebook');
+                        }
+                    } else {
+                        console.warn(`📘 Facebook HTTP ${response.status} for ${channel}`);
+                        this.handleChannelStatus(channel, false, 'facebook');
+                    }
+                },
+                onerror: (error) => {
+                    console.error(`📘 Facebook error for ${channel} (attempt ${retryCount + 1})`);
+                    if (retryCount < this.config.maxRetries) {
+                        setTimeout(() => {
+                            this.checkFacebookDirect(channel, retryCount + 1);
+                        }, 15000);
+                    } else {
+                        console.warn(`📘 Facebook monitoring failed for ${channel} - blocked by CORS`);
+                        this.handleChannelStatus(channel, false, 'facebook');
+                    }
+                },
+                ontimeout: () => {
+                    console.warn(`📘 Facebook timeout for ${channel}`);
+                    if (retryCount < this.config.maxRetries) {
+                        setTimeout(() => {
+                            this.checkFacebookDirect(channel, retryCount + 1);
+                        }, 15000);
+                    } else {
+                        this.handleChannelStatus(channel, false, 'facebook');
+                    }
+                }
+            });
+        }
+
         /**
          * Detect if a Facebook channel is live from HTML content
          */
@@ -2801,13 +2828,11 @@
          * Handle stream going live
          */
         onStreamLive(channel, platform = 'kick', wasEmpty = false) {
-            console.log(`🥒 STREAM LIVE: Adding ${channel} (${platform}) to grid`);
-            console.log(`🥒 Total live streams: ${this.getTotalLiveStreams()}`);
-            console.log(`🥒 Live streams map:`, this.liveStreams);
+            console.log(`Adding ${channel} to grid`);
 
             // Double-check that this channel is actually in our live streams set
             if (!this.isChannelLive(channel)) {
-                console.warn(`🥒 ${channel} not in live streams set, skipping grid addition`);
+                console.warn(`${channel} not in live streams set, skipping grid addition`);
                 return;
             }
 
@@ -2911,7 +2936,7 @@
             const player = document.createElement('div');
             player.className = 'ksm-stream-player';
             player.innerHTML = `
-                <div style="color: #666; text-align: center; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1;">
+                <div style="color: #666; text-align: center;">
                     <div class="ksm-loading"></div>
                     <br>Loading ${channel}...
                     <br><small style="color: #53fc18; font-weight: bold;">▶️ 🔇 Auto-playing muted</small>
@@ -2943,12 +2968,11 @@
 
             // Add to grid
             if (this.grid && this.grid.grid) {
-                console.log(`🥒 Adding ${channel} container to grid`);
+                console.log(`Adding ${channel} container to grid`);
                 this.grid.grid.appendChild(container);
                 this.streamContainers.set(channel, container);
-                console.log(`🥒 Container added. Total containers: ${this.streamContainers.size}`);
             } else {
-                console.error(`🥒 Grid not available for ${channel}`);
+                console.error(`Grid not available for ${channel}`);
             }
 
             // Load stream content
@@ -2968,49 +2992,31 @@
 
             this.grid.noStreamsMsg.style.display = 'none';
 
-            // Clear any previous manual grid settings to let CSS handle responsive layout
+            // Let CSS handle the responsive layout - remove any JS overrides
             this.grid.grid.style.gridTemplateColumns = '';
             this.grid.grid.style.gridAutoRows = '';
 
-            // Force layout recalculation
-            this.grid.grid.style.display = 'none';
-            this.grid.grid.offsetHeight; // Trigger reflow
-            this.grid.grid.style.display = 'grid';
-
-            // Calculate optimal grid dimensions based on stream count
-            const containerWidth = this.grid.container.offsetWidth - 16; // Account for padding
-            const containerHeight = this.grid.container.offsetHeight - 16;
-
-            // Calculate columns based on minimum stream width (300px)
-            const minStreamWidth = 300;
-            const maxColumns = Math.floor(containerWidth / minStreamWidth);
-            const optimalColumns = Math.min(maxColumns, streamCount);
-
-            if (optimalColumns > 0) {
-                const columnWidth = Math.max(minStreamWidth, Math.floor(containerWidth / optimalColumns) - 12); // Account for gap
-                this.grid.grid.style.gridTemplateColumns = `repeat(auto-fit, minmax(${columnWidth}px, 1fr))`;
-                console.log(`Grid optimized: ${optimalColumns} columns, ${columnWidth}px min width`);
-            }
-
-            // Adjust container height to fit content better
+            // Calculate precise height based on actual content
             if (this.grid.container && this.grid.grid) {
+                // Use a small timeout to let CSS layout settle
                 setTimeout(() => {
                     const gridRect = this.grid.grid.getBoundingClientRect();
                     const containerRect = this.grid.container.getBoundingClientRect();
 
-                    // Ensure container is tall enough but not excessively tall
-                    if (gridRect.height > 0) {
-                        const optimalHeight = Math.max(300, Math.min(containerHeight, gridRect.height + 40));
-                        this.grid.container.style.height = `${optimalHeight}px`;
-                        console.log(`Container height optimized: ${optimalHeight}px`);
+                    // Only adjust if content is significantly shorter than container
+                    if (gridRect.height > 0 && gridRect.height < containerRect.height - 100) {
+                        // Add minimal padding (just enough for borders/shadows)
+                        const newHeight = Math.max(250, gridRect.height + 30);
+                        this.grid.container.style.height = `${newHeight}px`;
+                        console.log(`Grid height adjusted to fit content: ${newHeight}px`);
                     }
-                }, 100); // Longer timeout for better measurement
+                }, 50);
             }
 
             // Update chat heights to match video containers
             this.updateChatHeights();
 
-            console.log(`Grid layout updated: ${streamCount} streams, optimized for ${optimalColumns || 'auto'} columns`);
+            console.log(`Grid layout updated: ${streamCount} streams, CSS auto-fit active`);
         }
 
         /**
@@ -3139,24 +3145,13 @@
          * Load Kick stream content
          */
         loadKickStreamContent(channel, playerElement) {
-            // Use Kick's official embed format with CSP workarounds
-            let embedUrl = `https://player.kick.com/${channel}`;
-
-            // On strict CSP sites, try alternative embedding methods
-            if (this.isStrictCSPSite()) {
-                console.log(`🥒 Strict CSP detected for ${channel}, trying alternative embedding`);
-                embedUrl = `https://kick.com/${channel}/embed`;
-            }
-
+            // Use Kick's official embed format - simple and clean!
+            const embedUrl = `https://player.kick.com/${channel}`;
             const iframe = document.createElement('iframe');
             iframe.src = embedUrl;
             iframe.frameBorder = '0';
             iframe.scrolling = 'no';
             iframe.allowFullscreen = true;
-
-            // Add CSP-friendly attributes
-            iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-presentation');
-            iframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen');
 
             // Try additional mute attributes (may not work due to cross-origin)
             iframe.setAttribute('muted', 'true');
@@ -3193,8 +3188,17 @@
             };
 
             iframe.onerror = () => {
-                console.error(`🥒 Iframe failed to load for ${channel} - CSP blocked`);
-                this.showCSPErrorMessage(playerElement, channel);
+                console.error(`🥒 Iframe failed to load for ${channel} - likely CSP blocked`);
+                // Show error message to user
+                playerElement.innerHTML = `
+                    <div style="color: #ff6b6b; text-align: center; padding: 20px;">
+                        <div>🚫 Stream blocked by site security</div>
+                        <div style="font-size: 12px; margin-top: 10px;">
+                            This website's security policy prevents embedding streams.<br>
+                            Try opening <a href="https://kick.com/${channel}" target="_blank" style="color: #53fc18;">kick.com/${channel}</a> in a new tab.
+                        </div>
+                    </div>
+                `;
             };
 
             // Ensure iframe is visible initially
@@ -3260,32 +3264,6 @@
             // Ensure iframe is visible initially
             iframe.style.opacity = '1';
             iframe.style.visibility = 'visible';
-        }
-
-        /**
-         * Show CSP error message with workarounds
-         */
-        showCSPErrorMessage(playerElement, channel) {
-            const currentSite = window.location.hostname;
-            const isStrictSite = this.isStrictCSPSite();
-
-            playerElement.innerHTML = `
-                <div style="color: #ff6b6b; text-align: center; padding: 20px; background: rgba(0,0,0,0.8); border-radius: 10px;">
-                    <div style="font-size: 16px; margin-bottom: 10px;">🚫 Content Blocked</div>
-                    <div style="font-size: 12px; margin-bottom: 15px;">
-                        ${currentSite} has strict security policies that prevent stream embedding.
-                    </div>
-                    <div style="font-size: 12px; margin-bottom: 10px;">
-                        <strong>Workarounds:</strong>
-                    </div>
-                    <div style="font-size: 11px; line-height: 1.4;">
-                        • Open <a href="https://kick.com/${channel}" target="_blank" style="color: #53fc18; text-decoration: underline;">kick.com/${channel}</a> in a new tab<br>
-                        • Try a different website (like google.com)<br>
-                        • Disable some browser extensions temporarily<br>
-                        • Use a more permissive browser
-                    </div>
-                </div>
-            `;
         }
 
         /**
@@ -3574,7 +3552,7 @@
                     }
                     if (this.monitoringInterval) {
                         statusText += ' | Monitoring active';
-                    } else {
+                } else {
                         statusText += ' | Click logo to start monitoring';
                     }
                 } else {
@@ -3591,11 +3569,6 @@
                     // Add CSP warning for cross-site usage
                     if (this.cspIssues && this.cspIssues.length > 0) {
                         statusText += ' ⚠️ CSP restrictions may limit functionality';
-                    }
-
-                    // Add embedding warning for strict sites
-                    if (this.isStrictCSPSite()) {
-                        statusText += ' 🚫 Embedding blocked - use new tab for streams';
                     }
                 }
 
