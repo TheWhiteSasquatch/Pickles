@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Pickle Patrol Stream Monitor
 // @namespace    https://kick.com/
-// @version      1.0.9
+// @version      1.0.10
 // @description  Keep an eye on Kick.com streams with the Pickle Patrol - dynamic grid display and embedded chat!
 // @author       Pickle Sheriff AI
 // @match        *://*/*
@@ -178,11 +178,15 @@
          * Handle page load
          */
         onPageLoad() {
+            console.log('🥒 Pickle Patrol onPageLoad triggered');
+
             // Skip if running in an iframe to prevent recursive initialization
             if (window.self !== window.top) {
                 console.log('Kick Stream Monitor skipping iframe context');
                 return;
             }
+
+            console.log('🥒 Not in iframe, proceeding with initialization');
 
             // Check if already initialized on this page
             if (window.ksmInitialized) {
@@ -190,6 +194,7 @@
                 return;
             }
 
+            console.log('🥒 First time initialization, marking as initialized');
             // Mark as initialized
             window.ksmInitialized = true;
 
@@ -213,6 +218,14 @@
 
             // Initialize resize functionality
             this.initializeResize();
+
+            // Fallback: Create simple logo if main GUI failed
+            setTimeout(() => {
+                if (!document.querySelector('.ksm-container')) {
+                    console.warn('🥒 Main GUI failed to create, creating fallback logo');
+                    this.createFallbackLogo();
+                }
+            }, 1000);
 
             if (isKickPage) {
                 // Full functionality on Kick.com pages - but wait for user interaction
@@ -250,6 +263,18 @@
             window.ksmTestFacebookCors = (channel) => {
                 console.log(`📘 Testing CORS proxy for ${channel}`);
                 this.checkFacebookViaCorsProxy(channel, 0);
+            };
+            window.ksmDebugGUI = () => {
+                console.log('🥒 === GUI DEBUG ===');
+                console.log('GUI object:', this.gui);
+                console.log('GUI container exists:', !!this.gui?.container);
+                console.log('GUI container in DOM:', !!document.querySelector('.ksm-container'));
+                console.log('Body exists:', !!document.body);
+                console.log('Document ready state:', document.readyState);
+                console.log('Is in iframe:', window.self !== window.top);
+                console.log('Current URL:', window.location.href);
+                console.log('===================');
+                return this.gui;
             };
         }
 
@@ -501,6 +526,8 @@
          * Create the GUI interface
          */
         createGUI() {
+            console.log('🥒 Creating GUI...');
+
             // Basic GUI skeleton - will be expanded in later phases
             this.gui = {
                 container: null,
@@ -1370,6 +1397,7 @@
             container.appendChild(panel);
 
             document.body.appendChild(container);
+            console.log('🥒 GUI container appended to document.body');
 
             this.gui.container = container;
             this.gui.buttonsContainer = buttonsContainer;
@@ -3043,6 +3071,65 @@
                 this.gui.container.style.left = 'auto';
                 this.gui.container.style.right = '20px';
                 console.log('🥒 GUI moved back to right side');
+            }
+        }
+
+        /**
+         * Create a simple fallback logo if main GUI fails
+         */
+        createFallbackLogo() {
+            console.log('🥒 Creating fallback logo');
+
+            // Remove any existing fallback logos
+            const existingFallback = document.querySelector('.ksm-fallback-logo');
+            if (existingFallback) {
+                existingFallback.remove();
+            }
+
+            const logo = document.createElement('img');
+            logo.src = 'https://i.imgur.com/LhrC00r.jpeg';
+            logo.className = 'ksm-fallback-logo';
+            logo.alt = 'Pickle Patrol Logo (Fallback)';
+            logo.title = 'Pickle Patrol - Click to retry GUI creation';
+
+            logo.style.cssText = `
+                position: fixed !important;
+                top: 20px !important;
+                right: 20px !important;
+                width: 50px !important;
+                height: 50px !important;
+                border-radius: 50% !important;
+                cursor: pointer !important;
+                transition: all 0.3s ease !important;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+                border: 2px solid #53fc18 !important;
+                background: #f0f8e7 !important;
+                opacity: 0.9 !important;
+                z-index: 10000 !important;
+            `;
+
+            logo.onmouseover = () => {
+                logo.style.opacity = '1';
+                logo.style.transform = 'scale(1.1)';
+            };
+
+            logo.onmouseout = () => {
+                logo.style.opacity = '0.9';
+                logo.style.transform = 'scale(1)';
+            };
+
+            logo.onclick = () => {
+                console.log('🥒 Fallback logo clicked - retrying GUI creation');
+                logo.remove();
+                this.createGUI();
+            };
+
+            // Add to page
+            if (document.body) {
+                document.body.appendChild(logo);
+                console.log('🥒 Fallback logo created successfully');
+            } else {
+                console.error('🥒 Cannot create fallback logo - no document.body');
             }
         }
 
