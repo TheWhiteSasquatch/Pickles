@@ -441,6 +441,7 @@
                 soundEnabled: false,
                 gridWidth: null, // Auto-sized initially
                 gridHeight: null, // Auto-sized initially
+                streamPositions: {}, // Saved positions for individual streams
                 lastMonitoringEnabled: null, // Timestamp when monitoring was last enabled
                 // Multi-platform support
                 platforms: {
@@ -832,14 +833,10 @@
                 }
 
                 .ksm-stream-grid {
-                    display: grid;
-                    gap: 10px;
+                    position: relative;
                     height: 100%;
                     pointer-events: auto;
-                    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-                    grid-auto-rows: minmax(200px, auto);
-                    align-items: start;
-                    justify-items: stretch;
+                    /* Allow absolute positioning of child streams */
                 }
 
                 .ksm-stream-container {
@@ -849,13 +846,18 @@
                     overflow: hidden;
                     display: flex;
                     flex-direction: column;
+                    position: absolute;
+                    min-width: 280px;
                     min-height: 200px;
+                    width: 320px;
+                    height: 240px;
                     box-shadow: 0 6px 20px rgba(0,0,0,0.6);
                     transition: all 0.3s ease;
+                    cursor: move;
+                    z-index: 1;
                 }
 
                 .ksm-stream-container:hover {
-                    transform: translateY(-2px);
                     box-shadow: 0 8px 25px rgba(0,0,0,0.7);
                 }
 
@@ -873,6 +875,13 @@
                     border-color: #4267B2;
                     box-shadow: 0 0 30px rgba(66, 103, 178, 0.4), 0 8px 25px rgba(0,0,0,0.7);
                     background: linear-gradient(135deg, #1a1a3a, #2a2a4a);
+                }
+
+                .ksm-stream-container.dragging {
+                    opacity: 0.8;
+                    transform: rotate(2deg);
+                    z-index: 1000;
+                    cursor: grabbing;
                 }
 
                 .ksm-stream-header {
@@ -2999,12 +3008,199 @@
                 console.log(`Adding ${channel} container to grid`);
                 this.grid.grid.appendChild(container);
                 this.streamContainers.set(channel, container);
+
+                // Position the stream - restore saved position or use default layout
+                if (!this.restoreStreamPosition(channel)) {
+                    // Default positioning for new streams
+                    this.positionNewStream(container, channel);
+                }
+
+                // Initialize drag functionality
+                this.initializeStreamDragging(container, channel);
             } else {
                 console.error(`Grid not available for ${channel}`);
             }
 
             // Load stream content
             this.loadStreamContent(channel, player, platform);
+        }
+
+        /**
+         * Initialize drag functionality for a stream container
+         */
+        initializeStreamDragging(container, channel) {
+            let isDragging = false;
+            let startX, startY, initialLeft, initialTop;
+            let dragStartTime = 0;
+
+            // Mouse down event - start dragging
+            container.addEventListener('mousedown', (e) => {
+                // Only start drag if clicking on the container itself (not buttons or controls)
+                if (e.target.closest('.ksm-stream-controls') || e.target.closest('.ksm-stream-btn')) {
+                    return;
+                }
+
+                isDragging = true;
+                dragStartTime = Date.now();
+                startX = e.clientX;
+                startY = e.clientY;
+
+                const rect = container.getBoundingClientRect();
+                initialLeft = rect.left;
+                initialTop = rect.top;
+
+                container.classList.add('dragging');
+                container.style.zIndex = '1000';
+
+                // Prevent text selection during drag
+                document.body.style.userSelect = 'none';
+
+                e.preventDefault();
+            });
+
+            // Mouse move event - handle dragging
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+
+                const newLeft = initialLeft + deltaX;
+                const newTop = initialTop + deltaY;
+
+                // Constrain to grid container bounds
+                if (this.grid && this.grid.container) {
+                    const gridRect = this.grid.container.getBoundingClientRect();
+                    const containerRect = container.getBoundingClientRect();
+
+                    const constrainedLeft = Math.max(gridRect.left, Math.min(newLeft, gridRect.right - containerRect.width));
+                    const constrainedTop = Math.max(gridRect.top, Math.min(newTop, gridRect.bottom - containerRect.height));
+
+                    container.style.left = `${constrainedLeft - gridRect.left}px`;
+                    container.style.top = `${constrainedTop - gridRect.top}px`;
+                }
+            });
+
+            // Mouse up event - stop dragging
+            document.addEventListener('mouseup', () => {
+                if (!isDragging) return;
+
+                isDragging = false;
+                container.classList.remove('dragging');
+                container.style.zIndex = '1';
+                document.body.style.userSelect = '';
+
+                // Save position if drag lasted more than 200ms (to avoid accidental moves)
+                if (Date.now() - dragStartTime > 200) {
+                    this.saveStreamPosition(channel);
+                }
+            });
+        }
+
+        /**
+         * Save the position of a stream container
+         */
+        saveStreamPosition(channel) {
+            const container = this.streamContainers.get(channel);
+            if (!container) return;
+
+            const gridRect = this.grid.container.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            const position = {
+                left: containerRect.left - gridRect.left,
+                top: containerRect.top - gridRect.top,
+                width: containerRect.width,
+                height: containerRect.height
+            };
+
+            if (!this.config.streamPositions) {
+                this.config.streamPositions = {};
+            }
+
+            this.config.streamPositions[channel] = position;
+            this.saveConfig();
+
+            console.log(`🥒 Saved position for ${channel}:`, position);
+        }
+
+        /**
+         * Restore the position of a stream container
+         */
+        restoreStreamPosition(channel) {
+            const container = this.streamContainers.get(channel);
+            if (!container || !this.config.streamPositions || !this.config.streamPositions[channel]) {
+                return false;
+            }
+
+            const position = this.config.streamPositions[channel];
+            container.style.left = `${position.left}px`;
+            container.style.top = `${position.top}px`;
+            container.style.width = `${position.width}px`;
+            container.style.height = `${position.height}px`;
+
+            console.log(`🥒 Restored position for ${channel}:`, position);
+            return true;
+        }
+
+        /**
+         * Position a new stream in a default layout
+         */
+        positionNewStream(container, channel) {
+            const streams = Array.from(this.streamContainers.keys());
+            const streamIndex = streams.indexOf(channel);
+
+            // Simple cascading layout
+            const baseLeft = 20 + (streamIndex * 50);
+            const baseTop = 20 + (streamIndex * 50);
+
+            container.style.left = `${baseLeft}px`;
+            container.style.top = `${baseTop}px`;
+            container.style.width = '320px';
+            container.style.height = '240px';
+
+            console.log(`🥒 Positioned new stream ${channel} at (${baseLeft}, ${baseTop})`);
+        }
+
+        /**
+         * Ensure all streams stay within grid bounds
+         */
+        constrainStreamsToGrid() {
+            if (!this.grid || !this.grid.container) return;
+
+            const gridRect = this.grid.container.getBoundingClientRect();
+
+            for (const [channel, container] of this.streamContainers) {
+                const containerRect = container.getBoundingClientRect();
+
+                let needsUpdate = false;
+                let newLeft = parseFloat(container.style.left) || 0;
+                let newTop = parseFloat(container.style.top) || 0;
+
+                // Constrain to grid bounds
+                if (containerRect.left < gridRect.left) {
+                    newLeft = 0;
+                    needsUpdate = true;
+                } else if (containerRect.right > gridRect.right) {
+                    newLeft = gridRect.width - containerRect.width;
+                    needsUpdate = true;
+                }
+
+                if (containerRect.top < gridRect.top) {
+                    newTop = 0;
+                    needsUpdate = true;
+                } else if (containerRect.bottom > gridRect.bottom) {
+                    newTop = gridRect.height - containerRect.height;
+                    needsUpdate = true;
+                }
+
+                if (needsUpdate) {
+                    container.style.left = `${newLeft}px`;
+                    container.style.top = `${newTop}px`;
+                    this.saveStreamPosition(channel);
+                    console.log(`🥒 Constrained ${channel} to grid bounds`);
+                }
+            }
         }
 
         /**
@@ -3020,31 +3216,13 @@
 
             this.grid.noStreamsMsg.style.display = 'none';
 
-            // Let CSS handle the responsive layout - remove any JS overrides
-            this.grid.grid.style.gridTemplateColumns = '';
-            this.grid.grid.style.gridAutoRows = '';
-
-            // Calculate precise height based on actual content
-            if (this.grid.container && this.grid.grid) {
-                // Use a small timeout to let CSS layout settle
-                setTimeout(() => {
-                    const gridRect = this.grid.grid.getBoundingClientRect();
-                    const containerRect = this.grid.container.getBoundingClientRect();
-
-                    // Only adjust if content is significantly shorter than container
-                    if (gridRect.height > 0 && gridRect.height < containerRect.height - 100) {
-                        // Add minimal padding (just enough for borders/shadows)
-                        const newHeight = Math.max(250, gridRect.height + 30);
-                        this.grid.container.style.height = `${newHeight}px`;
-                        console.log(`Grid height adjusted to fit content: ${newHeight}px`);
-                    }
-                }, 50);
-            }
+            // Ensure all streams are within grid bounds
+            this.constrainStreamsToGrid();
 
             // Update chat heights to match video containers
             this.updateChatHeights();
 
-            console.log(`Grid layout updated: ${streamCount} streams, CSS auto-fit active`);
+            console.log(`Grid layout updated: ${streamCount} streams with absolute positioning`);
         }
 
         /**
