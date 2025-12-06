@@ -780,19 +780,17 @@
                 /* Grid and Stream Containers */
                 .ksm-grid-container {
                     position: fixed;
-                    top: 80px;
-                    left: 20px;
-                    width: calc(100vw - 40px);
-                    height: calc(100vh - 100px);
+                    top: 0;
+                    left: 0;
+                    width: 100vw;
+                    height: 100vh;
                     z-index: 9998; /* Lower than GUI but higher than page content */
                     display: none;
                     pointer-events: none;
-                    resize: both;
-                    overflow: hidden;
-                    min-width: 400px;
-                    min-height: 300px;
-                    max-width: calc(100vw - 40px);
-                    max-height: calc(100vh - 100px);
+                    /* Allow streams to be positioned anywhere on screen */
+                    overflow: visible;
+                    min-width: 100vw;
+                    min-height: 100vh;
                 }
 
                 .ksm-grid-container::after {
@@ -3068,17 +3066,17 @@
                 const newLeft = initialLeft + deltaX;
                 const newTop = initialTop + deltaY;
 
-                // Constrain to grid container bounds
-                if (this.grid && this.grid.container) {
-                    const gridRect = this.grid.container.getBoundingClientRect();
-                    const containerRect = container.getBoundingClientRect();
+                // Allow dragging anywhere on the screen (within viewport bounds)
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                const containerRect = container.getBoundingClientRect();
 
-                    const constrainedLeft = Math.max(gridRect.left, Math.min(newLeft, gridRect.right - containerRect.width));
-                    const constrainedTop = Math.max(gridRect.top, Math.min(newTop, gridRect.bottom - containerRect.height));
+                // Keep streams within viewport bounds (but allow them to go off-screen if user wants)
+                const constrainedLeft = Math.max(0, Math.min(newLeft, viewportWidth - containerRect.width));
+                const constrainedTop = Math.max(0, Math.min(newTop, viewportHeight - containerRect.height));
 
-                    container.style.left = `${constrainedLeft - gridRect.left}px`;
-                    container.style.top = `${constrainedTop - gridRect.top}px`;
-                }
+                container.style.left = `${constrainedLeft}px`;
+                container.style.top = `${constrainedTop}px`;
             });
 
             // Mouse up event - stop dragging
@@ -3104,12 +3102,11 @@
             const container = this.streamContainers.get(channel);
             if (!container) return;
 
-            const gridRect = this.grid.container.getBoundingClientRect();
             const containerRect = container.getBoundingClientRect();
 
             const position = {
-                left: containerRect.left - gridRect.left,
-                top: containerRect.top - gridRect.top,
+                left: containerRect.left,
+                top: containerRect.top,
                 width: containerRect.width,
                 height: containerRect.height
             };
@@ -3134,12 +3131,20 @@
             }
 
             const position = this.config.streamPositions[channel];
-            container.style.left = `${position.left}px`;
-            container.style.top = `${position.top}px`;
+
+            // Ensure positions are within viewport bounds
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            const safeLeft = Math.max(0, Math.min(position.left, viewportWidth - position.width));
+            const safeTop = Math.max(0, Math.min(position.top, viewportHeight - position.height));
+
+            container.style.left = `${safeLeft}px`;
+            container.style.top = `${safeTop}px`;
             container.style.width = `${position.width}px`;
             container.style.height = `${position.height}px`;
 
-            console.log(`🥒 Restored position for ${channel}:`, position);
+            console.log(`🥒 Restored position for ${channel}:`, { left: safeLeft, top: safeTop, width: position.width, height: position.height });
             return true;
         }
 
@@ -3150,9 +3155,9 @@
             const streams = Array.from(this.streamContainers.keys());
             const streamIndex = streams.indexOf(channel);
 
-            // Simple cascading layout
-            const baseLeft = 20 + (streamIndex * 50);
-            const baseTop = 20 + (streamIndex * 50);
+            // Spread streams across the screen in a more distributed layout
+            const baseLeft = 50 + (streamIndex * 100) % (window.innerWidth - 400);
+            const baseTop = 100 + Math.floor(streamIndex / 4) * 100;
 
             container.style.left = `${baseLeft}px`;
             container.style.top = `${baseTop}px`;
@@ -3216,13 +3221,10 @@
 
             this.grid.noStreamsMsg.style.display = 'none';
 
-            // Ensure all streams are within grid bounds
-            this.constrainStreamsToGrid();
-
             // Update chat heights to match video containers
             this.updateChatHeights();
 
-            console.log(`Grid layout updated: ${streamCount} streams with absolute positioning`);
+            console.log(`Grid layout updated: ${streamCount} streams with free positioning`);
         }
 
         /**
