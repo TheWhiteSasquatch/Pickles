@@ -58,7 +58,6 @@
             this.gui = null;
             this.grid = null;
             this.streamContainers = new Map();
-            this.facebookFailures = 0; // Track consecutive Facebook monitoring failures
 
             // Load config asynchronously and then initialize
             this.loadConfig().then(config => {
@@ -259,10 +258,6 @@
 
             // Make debug function globally available
             window.ksmDebugConfig = () => this.debugConfig();
-            window.ksmTestFacebookCors = (channel) => {
-                console.log(`📘 Testing CORS proxy for ${channel}`);
-                this.checkFacebookViaCorsProxy(channel, 0);
-            };
             window.ksmDebugGUI = () => {
                 console.log('🥒 === GUI DEBUG ===');
                 console.log('GUI object:', this.gui);
@@ -498,19 +493,12 @@
                 gridHeight: null, // Auto-sized initially
                 streamPositions: {}, // Saved positions for individual streams
                 lastMonitoringEnabled: null, // Timestamp when monitoring was last enabled
-                // Multi-platform support
+                // Platform support
                 platforms: {
                     kick: {
                         enabled: true,
                         channels: kickChannels,
                         pollInterval: 300000 // 5 minutes
-                    },
-                    facebook: {
-                        enabled: false,
-                        channels: [],
-                        pollInterval: 60000, // 1 minute (more frequent due to login requirements)
-                        useCorsProxy: true, // Enable CORS proxy to bypass restrictions
-                        corsProxyUrl: 'https://api.codetabs.com/v1/proxy?quest=' // CORS proxy service
                     }
                 }
             };
@@ -898,15 +886,6 @@
                     background: linear-gradient(135deg, #1a2a1a, #2a3a2a);
                 }
 
-                .ksm-stream-container.facebook {
-                    background: linear-gradient(135deg, #1a1a2a, #2a2a3a);
-                }
-
-                .ksm-stream-container.facebook.live {
-                    border-color: #4267B2;
-                    box-shadow: 0 0 30px rgba(66, 103, 178, 0.4), 0 8px 25px rgba(0,0,0,0.7);
-                    background: linear-gradient(135deg, #1a1a3a, #2a2a4a);
-                }
 
                 .ksm-stream-container.dragging {
                     opacity: 0.8;
@@ -1120,47 +1099,152 @@
                     to { transform: rotate(360deg); }
                 }
 
-                /* Pickle Rain Animation */
-                .ksm-pickle-rain {
+                /* THICK PICKLE INVASION - Really thick pickles from all sides! */
+                .ksm-thick-pickle {
                     position: fixed;
-                    top: -50px;
-                    z-index: 10001;
+                    z-index: 10002; /* Higher than regular rain */
                     pointer-events: none;
-                    font-size: 32px;
-                    animation: ksm-pickle-fall linear infinite;
-                    opacity: 0.8;
+                    font-size: 120px; /* ENORMOUS pickles! */
+                    opacity: 0;
+                    animation-fill-mode: forwards;
                 }
 
-                .ksm-pickle-rain.dill { animation-duration: 3s; }
-                .ksm-pickle-rain.sweet { animation-duration: 4s; }
-                .ksm-pickle-rain.sour { animation-duration: 2.5s; }
-                .ksm-pickle-rain.gherkin { animation-duration: 3.5s; }
-                .ksm-pickle-rain.cucumber { animation-duration: 4.2s; }
-                .ksm-pickle-rain.jar { animation-duration: 3.8s; }
+                /* Top invasion - pickles poking down from top */
+                .ksm-thick-pickle.top-invasion {
+                    top: -150px;
+                    animation: ksm-pickle-top-invasion 3s ease-out;
+                }
 
-                .ksm-pickle-rain.dill { left: 10%; animation-delay: 0s; }
-                .ksm-pickle-rain.sweet { left: 25%; animation-delay: 0.5s; }
-                .ksm-pickle-rain.sour { left: 40%; animation-delay: 1s; }
-                .ksm-pickle-rain.gherkin { left: 55%; animation-delay: 1.5s; }
-                .ksm-pickle-rain.cucumber { left: 70%; animation-delay: 2s; }
-                .ksm-pickle-rain.jar { left: 85%; animation-delay: 2.5s; }
+                /* Bottom invasion - pickles poking up from bottom */
+                .ksm-thick-pickle.bottom-invasion {
+                    bottom: -150px;
+                    animation: ksm-pickle-bottom-invasion 3s ease-out;
+                }
 
-                @keyframes ksm-pickle-fall {
+                /* Left invasion - pickles poking right from left side */
+                .ksm-thick-pickle.left-invasion {
+                    left: -150px;
+                    animation: ksm-pickle-left-invasion 3s ease-out;
+                }
+
+                /* Right invasion - pickles poking left from right side */
+                .ksm-thick-pickle.right-invasion {
+                    right: -150px;
+                    animation: ksm-pickle-right-invasion 3s ease-out;
+                }
+
+                /* Top invasion animation - poke down then bounce back */
+                @keyframes ksm-pickle-top-invasion {
                     0% {
-                        transform: translateY(-50px) rotate(0deg) scale(1);
-                        opacity: 0.8;
+                        transform: translateY(0) rotate(0deg) scale(0.3);
+                        opacity: 0;
                     }
-                    10% {
+                    15% {
+                        transform: translateY(200px) rotate(45deg) scale(2.5);
                         opacity: 1;
                     }
-                    85% {
+                    30% {
+                        transform: translateY(150px) rotate(-30deg) scale(3);
+                        opacity: 1;
+                    }
+                    45% {
+                        transform: translateY(250px) rotate(60deg) scale(2.2);
+                        opacity: 1;
+                    }
+                    60% {
+                        transform: translateY(180px) rotate(-45deg) scale(2.8);
                         opacity: 1;
                     }
                     100% {
-                        transform: translateY(calc(100vh + 50px)) rotate(720deg) scale(0.3);
+                        transform: translateY(-300px) rotate(720deg) scale(0.1);
                         opacity: 0;
                     }
                 }
+
+                /* Bottom invasion animation - poke up then bounce back */
+                @keyframes ksm-pickle-bottom-invasion {
+                    0% {
+                        transform: translateY(0) rotate(0deg) scale(0.3);
+                        opacity: 0;
+                    }
+                    15% {
+                        transform: translateY(-200px) rotate(-45deg) scale(2.5);
+                        opacity: 1;
+                    }
+                    30% {
+                        transform: translateY(-150px) rotate(30deg) scale(3);
+                        opacity: 1;
+                    }
+                    45% {
+                        transform: translateY(-250px) rotate(-60deg) scale(2.2);
+                        opacity: 1;
+                    }
+                    60% {
+                        transform: translateY(-180px) rotate(45deg) scale(2.8);
+                        opacity: 1;
+                    }
+                    100% {
+                        transform: translateY(300px) rotate(-720deg) scale(0.1);
+                        opacity: 0;
+                    }
+                }
+
+                /* Left invasion animation - poke right then bounce back */
+                @keyframes ksm-pickle-left-invasion {
+                    0% {
+                        transform: translateX(0) rotate(0deg) scale(0.3);
+                        opacity: 0;
+                    }
+                    15% {
+                        transform: translateX(200px) rotate(45deg) scale(2.5);
+                        opacity: 1;
+                    }
+                    30% {
+                        transform: translateX(150px) rotate(-30deg) scale(3);
+                        opacity: 1;
+                    }
+                    45% {
+                        transform: translateX(250px) rotate(60deg) scale(2.2);
+                        opacity: 1;
+                    }
+                    60% {
+                        transform: translateX(180px) rotate(-45deg) scale(2.8);
+                        opacity: 1;
+                    }
+                    100% {
+                        transform: translateX(-300px) rotate(720deg) scale(0.1);
+                        opacity: 0;
+                    }
+                }
+
+                /* Right invasion animation - poke left then bounce back */
+                @keyframes ksm-pickle-right-invasion {
+                    0% {
+                        transform: translateX(0) rotate(0deg) scale(0.3);
+                        opacity: 0;
+                    }
+                    15% {
+                        transform: translateX(-200px) rotate(-45deg) scale(2.5);
+                        opacity: 1;
+                    }
+                    30% {
+                        transform: translateX(-150px) rotate(30deg) scale(3);
+                        opacity: 1;
+                    }
+                    45% {
+                        transform: translateX(-250px) rotate(-60deg) scale(2.2);
+                        opacity: 1;
+                    }
+                    60% {
+                        transform: translateX(-180px) rotate(45deg) scale(2.8);
+                        opacity: 1;
+                    }
+                    100% {
+                        transform: translateX(300px) rotate(-720deg) scale(0.1);
+                        opacity: 0;
+                    }
+                }
+
             `);
 
             // Create container
@@ -1265,21 +1349,6 @@
                     <input type="checkbox" id="ksm-kick-enabled" ${this.config.platforms.kick.enabled ? 'checked' : ''}>
                     🥒 Enable Kick.com Monitoring
                 </label>
-                <label class="ksm-toggle">
-                    <input type="checkbox" id="ksm-facebook-enabled" ${this.config.platforms.facebook.enabled ? 'checked' : ''}>
-                    📘 Enable Facebook Live Monitoring (🔒 BLOCKED - Requires Login)
-                </label>
-                <div style="font-size: 11px; color: #888; margin-top: 4px; padding: 6px; background: #222; border-radius: 4px; border-left: 3px solid #4267B2;">
-                    Facebook blocks external access to live streams. Use manual override buttons (🔴) in channel list to mark streams as live.
-                </div>
-                <div class="ksm-input-group">
-                    <label for="ksm-facebook-poll-interval">Facebook Poll Interval (seconds):</label>
-                    <input type="number" id="ksm-facebook-poll-interval" min="30" max="600" value="${this.config.platforms.facebook.pollInterval / 1000}">
-                </div>
-                <label class="ksm-toggle">
-                    <input type="checkbox" id="ksm-facebook-cors-proxy" ${this.config.platforms.facebook.useCorsProxy ? 'checked' : ''}>
-                    Use CORS Proxy (attempts to bypass blocking)
-                </label>
             `;
 
             // Grid settings section
@@ -1377,52 +1446,6 @@
                 channelSection.appendChild(kickChannelList);
             }
 
-            // Facebook channels
-            if (this.config.platforms.facebook.enabled) {
-                const fbHeader = document.createElement('h4');
-                fbHeader.textContent = '📘 Facebook Channels';
-                fbHeader.style.color = '#4267B2';
-                fbHeader.style.margin = '8px 0 3px 0';
-                fbHeader.style.fontSize = '13px';
-                channelSection.appendChild(fbHeader);
-
-                // Add Facebook channel input
-                const fbAddContainer = document.createElement('div');
-                fbAddContainer.className = 'ksm-input-group';
-                fbAddContainer.style.marginBottom = '8px';
-
-                const fbInput = document.createElement('input');
-                fbInput.type = 'text';
-                fbInput.placeholder = 'Add Facebook username (e.g., NikySal56)';
-                fbInput.style.width = 'calc(100% - 60px)';
-                fbInput.style.marginRight = '4px';
-
-                const fbAddBtn = document.createElement('button');
-                fbAddBtn.className = 'ksm-button';
-                fbAddBtn.textContent = 'Add';
-                fbAddBtn.style.fontSize = '12px';
-                fbAddBtn.style.padding = '6px 12px';
-                fbAddBtn.onclick = () => {
-                    const newChannel = fbInput.value.trim().toLowerCase();
-                    if (newChannel && !this.config.platforms.facebook.channels.includes(newChannel)) {
-                        this.config.platforms.facebook.channels.push(newChannel);
-                        this.saveConfig();
-                        this.updateFacebookChannelList();
-                        this.updateLiveChannelList();
-                        fbInput.value = '';
-                    }
-                };
-
-                fbAddContainer.appendChild(fbInput);
-                fbAddContainer.appendChild(fbAddBtn);
-                channelSection.appendChild(fbAddContainer);
-
-                const fbChannelList = document.createElement('div');
-                fbChannelList.className = 'ksm-channel-list';
-                fbChannelList.id = 'ksm-facebook-channel-list';
-                this.updateFacebookChannelList(fbChannelList);
-                channelSection.appendChild(fbChannelList);
-            }
 
             // Actions section
             const actionsSection = document.createElement('div');
@@ -1805,29 +1828,6 @@
                 this.updateStatus();
             };
 
-            const facebookEnabledToggle = panel.querySelector('#ksm-facebook-enabled');
-            facebookEnabledToggle.onchange = (e) => {
-                this.config.platforms.facebook.enabled = e.target.checked;
-                this.saveConfig();
-                this.updateStatus();
-            };
-
-            const facebookPollIntervalInput = panel.querySelector('#ksm-facebook-poll-interval');
-            facebookPollIntervalInput.onchange = (e) => {
-                const value = parseInt(e.target.value);
-                if (value >= 30 && value <= 600) {
-                    this.config.platforms.facebook.pollInterval = value * 1000;
-                    this.saveConfig();
-                }
-            };
-
-            const facebookCorsProxyToggle = panel.querySelector('#ksm-facebook-cors-proxy');
-            facebookCorsProxyToggle.onchange = (e) => {
-                this.config.platforms.facebook.useCorsProxy = e.target.checked;
-                this.saveConfig();
-                console.log(`📘 CORS proxy ${e.target.checked ? 'enabled' : 'disabled'} for Facebook monitoring`);
-            };
-
             // Actions
             const clearAllBtn = panel.querySelector('#ksm-clear-all');
             clearAllBtn.onclick = () => {
@@ -1891,17 +1891,12 @@
                 nameSpan.style.fontWeight = 'bold';
 
                 // Platform-specific styling
-                if (platform === 'facebook') {
-                    nameSpan.style.color = '#4267B2';
-                    nameSpan.textContent += ' 📘';
-                } else {
-                    nameSpan.style.color = '#53fc18';
-                    nameSpan.textContent += ' 🥒';
-                }
+                nameSpan.style.color = '#53fc18';
+                nameSpan.textContent += ' 🥒';
 
                 const viewBtn = document.createElement('button');
                 viewBtn.className = 'ksm-stream-btn';
-                viewBtn.textContent = platform === 'facebook' ? '📘' : '🥒';
+                viewBtn.textContent = '🥒';
                 viewBtn.title = `View ${platform} stream in grid`;
                 viewBtn.onclick = () => this.toggleGrid(true);
 
@@ -1958,84 +1953,12 @@
             });
         }
 
-        /**
-         * Update the Facebook channel list display
-         */
-        updateFacebookChannelList(container = null) {
-            const channelList = container || document.getElementById('ksm-facebook-channel-list');
-            if (!channelList) return;
-
-            channelList.innerHTML = '';
-
-            this.config.platforms.facebook.channels.forEach((channel, index) => {
-                const item = document.createElement('div');
-                item.className = 'ksm-channel-item';
-
-                const nameSpan = document.createElement('span');
-                nameSpan.className = 'ksm-channel-name';
-                nameSpan.textContent = channel;
-
-                // Show live status indicator
-                const fbStreams = this.liveStreams.get('facebook') || new Set();
-                const isLive = fbStreams.has(channel);
-                if (isLive) {
-                    nameSpan.style.color = '#4267B2';
-                    nameSpan.style.fontWeight = 'bold';
-                }
-
-                const statusIndicator = document.createElement('span');
-                statusIndicator.textContent = isLive ? ' 🔴' : ' ⚫';
-                statusIndicator.title = isLive ? 'Live' : 'Offline';
-                nameSpan.appendChild(statusIndicator);
-
-                // Manual override button for Facebook (since automatic detection is blocked)
-                const overrideBtn = document.createElement('button');
-                overrideBtn.className = 'ksm-stream-btn';
-                overrideBtn.textContent = '🔴';
-                overrideBtn.title = isLive ? 'Mark as offline (manual override)' : 'Mark as live (manual override)';
-                overrideBtn.style.fontSize = '12px';
-                overrideBtn.style.padding = '2px 6px';
-                overrideBtn.style.marginLeft = '4px';
-                overrideBtn.onclick = () => {
-                    if (isLive) {
-                        // Mark as offline
-                        this.handleChannelStatus(channel, false, 'facebook');
-                        this.updateFacebookChannelList();
-                        this.updateLiveChannelList();
-                        console.log(`📘 Manually marked ${channel} as offline`);
-                    } else {
-                        // Mark as live
-                        this.handleChannelStatus(channel, true, 'facebook');
-                        this.updateFacebookChannelList();
-                        this.updateLiveChannelList();
-                        console.log(`📘 Manually marked ${channel} as live`);
-                    }
-                };
-
-                const removeBtn = document.createElement('button');
-                removeBtn.className = 'ksm-remove-channel';
-                removeBtn.textContent = '×';
-                removeBtn.title = 'Remove channel';
-                removeBtn.onclick = () => {
-                    this.config.platforms.facebook.channels.splice(index, 1);
-                    this.saveConfig();
-                    this.updateFacebookChannelList();
-                    this.updateLiveChannelList();
-                };
-
-                item.appendChild(nameSpan);
-                item.appendChild(overrideBtn);
-                item.appendChild(removeBtn);
-                channelList.appendChild(item);
-            });
-        }
 
         /**
          * Update the monitored channel list display (legacy method for backward compatibility)
          */
         updateChannelList() {
             this.updateKickChannelList();
-            this.updateFacebookChannelList();
         }
 
         /**
@@ -2342,20 +2265,6 @@
                 }
             }
 
-            // Check Facebook streams
-            if (this.config.platforms.facebook.enabled) {
-                const fbChannels = this.config.platforms.facebook.channels;
-
-                // Also check current page if it's a Facebook profile
-                const currentFbChannel = this.getCurrentFacebookChannel();
-                if (currentFbChannel && !fbChannels.includes(currentFbChannel)) {
-                    fbChannels.push(currentFbChannel);
-                }
-
-                for (const channel of fbChannels) {
-                    this.checkFacebookChannelStatus(channel);
-                }
-            }
         }
 
         /**
@@ -2640,301 +2549,8 @@
             return false;
         }
 
-        /**
-         * Extract Facebook username from current URL if on Facebook
-         */
-        getCurrentFacebookChannel() {
-            if (!window.location.hostname.includes('facebook.com') &&
-                !window.location.hostname.includes('fb.com')) {
-                return null;
-            }
 
-            // Match Facebook profile URLs like:
-            // https://www.facebook.com/username
-            // https://facebook.com/username
-            // https://fb.com/username
-            const match = window.location.pathname.match(/^\/([^\/]+)(?:\/|$)/);
-            if (match && match[1]) {
-                const username = match[1];
-                // Skip if it's not a valid username (special pages like 'pages', 'groups', etc.)
-                const skipPatterns = ['pages', 'groups', 'events', 'marketplace', 'gaming', 'watch'];
-                if (!skipPatterns.includes(username) && username.length > 2) {
-                    return username;
-                }
-            }
 
-            return null;
-        }
-
-        /**
-         * Check Facebook channel status using HTML scraping
-         */
-        checkFacebookChannelStatus(channel, retryCount = 0) {
-            // Try CORS proxy first if enabled
-            if (this.config.platforms.facebook.useCorsProxy && retryCount === 0) {
-                return this.checkFacebookViaCorsProxy(channel, 0);
-            }
-
-            // Fallback to direct access
-            const url = `https://www.facebook.com/${channel}`;
-
-            GM_xmlhttpRequest({
-                method: 'GET',
-                url: url,
-                timeout: 10000,
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-                    'Accept-Language': 'en-US,en;q=0.9',
-                    'Accept-Encoding': 'gzip, deflate, br',
-                    'Cache-Control': 'max-age=0',
-                    'Connection': 'keep-alive',
-                    'Upgrade-Insecure-Requests': '1',
-                    'Sec-Fetch-Dest': 'document',
-                    'Sec-Fetch-Mode': 'navigate',
-                    'Sec-Fetch-Site': 'none',
-                    'Sec-Fetch-User': '?1',
-                    'DNT': '1'
-                },
-                onload: (response) => {
-                    if (response.status === 200) {
-                        // Check if Facebook is redirecting to login or showing an error page
-                        const html = response.responseText;
-                        const isLoginPage = html.includes('login') || html.includes('Log In') || html.includes('Sign Up');
-                        const isErrorPage = html.includes('error') || html.includes('not found') || html.includes('404');
-                        const isBlocked = html.includes('blocked') || html.includes('security check');
-
-                        if (isLoginPage) {
-                            console.warn(`📘 Facebook login required for ${channel} - cannot check live status without authentication`);
-                            this.handleChannelStatus(channel, false, 'facebook');
-                        } else if (isErrorPage || isBlocked) {
-                            console.warn(`📘 Facebook access blocked for ${channel} - page not accessible`);
-                            this.handleChannelStatus(channel, false, 'facebook');
-                        } else {
-                            const isLive = this.detectFacebookLiveStatus(html, channel);
-                            this.handleChannelStatus(channel, isLive, 'facebook');
-                        }
-                    } else if (response.status === 404) {
-                        console.warn(`📘 Facebook channel ${channel} not found (404)`);
-                        this.handleChannelStatus(channel, false, 'facebook');
-                    } else {
-                        console.warn(`📘 Facebook HTTP ${response.status} for ${channel}`);
-                        this.handleChannelStatus(channel, false, 'facebook');
-                    }
-                },
-                onerror: (error) => {
-                    console.error(`📘 Facebook error for ${channel} (attempt ${retryCount + 1}):`, error);
-
-                    if (retryCount < this.config.maxRetries) {
-                        // Use longer delay for Facebook (15 seconds) since they block aggressively
-                        setTimeout(() => {
-                            this.checkFacebookChannelStatus(channel, retryCount + 1);
-                        }, 15000);
-                    } else {
-                        console.warn(`📘 Facebook monitoring failed for ${channel} after ${this.config.maxRetries + 1} attempts - channel will be marked offline`);
-                        this.handleChannelStatus(channel, false, 'facebook');
-                    }
-                },
-                ontimeout: () => {
-                    console.warn(`📘 Facebook timeout for ${channel} (attempt ${retryCount + 1})`);
-
-                    if (retryCount < this.config.maxRetries) {
-                        // Use longer delay for Facebook (15 seconds) since they block aggressively
-                        setTimeout(() => {
-                            this.checkFacebookChannelStatus(channel, retryCount + 1);
-                        }, 15000);
-                    } else {
-                        console.warn(`📘 Facebook monitoring failed for ${channel} after ${this.config.maxRetries + 1} attempts - channel will be marked offline`);
-                        this.handleChannelStatus(channel, false, 'facebook');
-                    }
-                }
-            });
-        }
-
-        checkFacebookViaCorsProxy(channel, retryCount = 0) {
-            // Use CORS proxy to bypass Facebook's restrictions
-            const proxyUrl = this.config.platforms.facebook.corsProxyUrl;
-            const targetUrl = `https://m.facebook.com/${channel}`;
-            const proxiedUrl = proxyUrl + encodeURIComponent(targetUrl);
-
-            console.log(`📘 Trying CORS proxy for ${channel}`);
-
-            GM_xmlhttpRequest({
-                method: 'GET',
-                url: proxiedUrl,
-                timeout: 15000,
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-                },
-                onload: (response) => {
-                    if (response.status === 200) {
-                        const html = response.responseText;
-                        console.log(`📘 CORS proxy response for ${channel}: ${html.length} chars`);
-
-                        // Check if we got actual Facebook content (not an error page)
-                        if (html.includes('facebook.com') || html.includes('Facebook') ||
-                            html.includes('timeline') || html.includes('post')) {
-
-                            const isLive = this.detectFacebookLiveStatus(html, channel);
-                            console.log(`📘 CORS proxy result for ${channel}: ${isLive ? 'LIVE' : 'OFFLINE'}`);
-                            this.handleChannelStatus(channel, isLive, 'facebook');
-
-                        } else {
-                            console.warn(`📘 CORS proxy blocked - Facebook returned error page`);
-                            // Fallback to direct access
-                            setTimeout(() => this.checkFacebookDirect(channel, 0), 1000);
-                        }
-                    } else {
-                        console.warn(`📘 CORS proxy failed: HTTP ${response.status}`);
-                        // Fallback to direct access
-                        setTimeout(() => this.checkFacebookDirect(channel, 0), 1000);
-                    }
-                },
-                onerror: (error) => {
-                    console.error(`📘 CORS proxy error:`, error);
-                    // Fallback to direct access
-                    setTimeout(() => this.checkFacebookDirect(channel, 0), 1000);
-                },
-                ontimeout: () => {
-                    console.warn(`📘 CORS proxy timeout`);
-                    // Fallback to direct access
-                    setTimeout(() => this.checkFacebookDirect(channel, 0), 1000);
-                }
-            });
-        }
-
-        checkFacebookDirect(channel, retryCount = 0) {
-            // Direct access fallback (will likely fail due to CORS)
-            const url = `https://www.facebook.com/${channel}`;
-
-            GM_xmlhttpRequest({
-                method: 'GET',
-                url: url,
-                timeout: 10000,
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-                    'Accept-Language': 'en-US,en;q=0.9',
-                    'Accept-Encoding': 'gzip, deflate, br',
-                    'Cache-Control': 'max-age=0',
-                    'Connection': 'keep-alive',
-                    'Upgrade-Insecure-Requests': '1',
-                    'Sec-Fetch-Dest': 'document',
-                    'Sec-Fetch-Mode': 'navigate',
-                    'Sec-Fetch-Site': 'none',
-                    'Sec-Fetch-User': '?1',
-                    'DNT': '1'
-                },
-                onload: (response) => {
-                    if (response.status === 200) {
-                        const html = response.responseText;
-                        const isLoginPage = html.includes('login') || html.includes('Log In') || html.includes('Sign Up');
-                        const isErrorPage = html.includes('error') || html.includes('not found') || html.includes('404');
-
-                        if (isLoginPage) {
-                            console.warn(`📘 Facebook login required for ${channel}`);
-                            this.handleChannelStatus(channel, false, 'facebook');
-                        } else if (isErrorPage) {
-                            console.warn(`📘 Facebook access blocked for ${channel}`);
-                            this.handleChannelStatus(channel, false, 'facebook');
-                        } else {
-                            const isLive = this.detectFacebookLiveStatus(html, channel);
-                            this.handleChannelStatus(channel, isLive, 'facebook');
-                        }
-                    } else {
-                        console.warn(`📘 Facebook HTTP ${response.status} for ${channel}`);
-                        this.handleChannelStatus(channel, false, 'facebook');
-                    }
-                },
-                onerror: (error) => {
-                    console.error(`📘 Facebook error for ${channel} (attempt ${retryCount + 1})`);
-                    if (retryCount < this.config.maxRetries) {
-                        setTimeout(() => {
-                            this.checkFacebookDirect(channel, retryCount + 1);
-                        }, 15000);
-                    } else {
-                        console.warn(`📘 Facebook monitoring failed for ${channel} - blocked by CORS`);
-                        this.handleChannelStatus(channel, false, 'facebook');
-                    }
-                },
-                ontimeout: () => {
-                    console.warn(`📘 Facebook timeout for ${channel}`);
-                    if (retryCount < this.config.maxRetries) {
-                        setTimeout(() => {
-                            this.checkFacebookDirect(channel, retryCount + 1);
-                        }, 15000);
-                    } else {
-                        this.handleChannelStatus(channel, false, 'facebook');
-                    }
-                }
-            });
-        }
-
-        /**
-         * Detect if a Facebook channel is live from HTML content
-         */
-        detectFacebookLiveStatus(html, channel) {
-            try {
-                // Method 1: Check for DASH streaming URLs (most reliable)
-                const hasDashStreaming = html.includes('/live-dash/') ||
-                                        html.includes('dash-lp-qd-a') ||
-                                        html.includes('dash-lp-md-v');
-
-                // Method 2: Check for live video player elements
-                const hasLivePlayer = html.includes('livePlayer') ||
-                                     html.includes('LivePlayer') ||
-                                     html.includes('live_video');
-
-                // Method 3: Check for WebRTC or streaming protocols
-                const hasStreamingProtocol = html.includes('webrtc') ||
-                                           html.includes('WebRTC') ||
-                                           html.includes('hls') ||
-                                           html.includes('HLS');
-
-                // Method 4: Check for live indicators in text (multiple languages)
-                const liveIndicators = ['LIVE', 'Live', 'live', 'EN VIVO', 'En vivo', 'en vivo', 'LIVE NOW', 'Live now'];
-                let hasLiveText = false;
-                for (const indicator of liveIndicators) {
-                    if (html.includes(indicator)) {
-                        hasLiveText = true;
-                        break;
-                    }
-                }
-
-                // Method 5: Check for Facebook's live streaming UI elements
-                const hasFbLiveUI = html.includes('liveBadge') ||
-                                   html.includes('live_indicator') ||
-                                   html.includes('streaming_status');
-
-                // Method 6: Check for viewer count patterns (indicates active stream)
-                const hasViewerCount = /\b\d+\s*(?:viewers?|watching|spectateurs?|personnes?)\b/i.test(html) ||
-                                      /\b\d+\s*(?:visiteurs?|watching now)\b/i.test(html);
-
-                // Log detection results for debugging
-                console.log(`📘 Facebook detection for ${channel}:`, {
-                    hasDashStreaming,
-                    hasLivePlayer,
-                    hasStreamingProtocol,
-                    hasLiveText,
-                    hasFbLiveUI,
-                    hasViewerCount
-                });
-
-                // Require multiple indicators for reliability
-                // Must have either DASH streaming OR live player + at least 2 other indicators
-                const essentialIndicators = hasDashStreaming || hasLivePlayer;
-                const supportingIndicators = [hasStreamingProtocol, hasLiveText, hasFbLiveUI, hasViewerCount]
-                    .filter(Boolean).length;
-
-                return essentialIndicators && supportingIndicators >= 2;
-
-            } catch (error) {
-                console.error(`📘 Error parsing Facebook HTML for ${channel}:`, error);
-                // Fallback: simple text search
-                return html.includes('LIVE') || html.includes('live') || html.includes('/live-dash/');
-            }
-        }
 
         /**
          * Handle stream going live
@@ -3014,7 +2630,7 @@
          */
         createStreamContainer(channel, platform = 'kick') {
             const container = document.createElement('div');
-            container.className = `ksm-stream-container live ${platform}`;
+            container.className = `ksm-stream-container live`;
             container.id = `ksm-stream-${channel}`;
 
             // Header
@@ -3543,11 +3159,7 @@
          * Load stream content (player and chat)
          */
         loadStreamContent(channel, playerElement, platform = 'kick') {
-            if (platform === 'facebook') {
-                this.loadFacebookStreamContent(channel, playerElement);
-            } else {
-                this.loadKickStreamContent(channel, playerElement);
-            }
+            this.loadKickStreamContent(channel, playerElement);
         }
 
         /**
@@ -3615,168 +3227,71 @@
             iframe.style.visibility = 'visible';
         }
 
-        /**
-         * Load Facebook stream content
-         */
-        loadFacebookStreamContent(channel, playerElement) {
-            // Facebook embedding is more complex due to authentication requirements
-            // Method 1: Try Facebook's video embed if available
-            let embedUrl = `https://www.facebook.com/plugins/video.php?href=https://www.facebook.com/${channel}/live&show_text=false`;
-
-            // Method 2: Fallback to direct page embed (may require login)
-            const fallbackUrl = `https://www.facebook.com/${channel}`;
-
-            const iframe = document.createElement('iframe');
-            iframe.src = embedUrl;
-            iframe.frameBorder = '0';
-            iframe.scrolling = 'no';
-            iframe.allowFullscreen = true;
-            iframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen');
-
-            // Clear loading content and add iframe
-            playerElement.innerHTML = '';
-            playerElement.appendChild(iframe);
-
-            // Facebook chat integration (if enabled)
-            if (this.config.showChat) {
-                const chatIframe = playerElement.parentElement.querySelector('.ksm-chat-content iframe');
-                if (chatIframe) {
-                    // Facebook doesn't have a separate chat embed, so embed the full live page
-                    chatIframe.src = fallbackUrl;
-                }
-            }
-
-            let embedAttempted = false;
-
-            iframe.onload = () => {
-                console.log(`📘 Facebook iframe loaded for ${channel}`);
-                // Force iframe to be visible after loading
-                iframe.style.opacity = '1';
-                iframe.style.visibility = 'visible';
-            };
-
-            iframe.onerror = () => {
-                if (!embedAttempted) {
-                    console.log(`📘 Facebook embed failed for ${channel}, trying fallback`);
-                    embedAttempted = true;
-                    iframe.src = fallbackUrl;
-                    return;
-                }
-
-                console.error(`📘 Facebook iframe failed to load for ${channel} - authentication or CSP issues`);
-
-                // Determine the type of error and show appropriate message
-                const errorMsg = this.getFacebookErrorMessage(channel, fallbackUrl);
-                playerElement.innerHTML = errorMsg;
-            };
-
-            // Ensure iframe is visible initially
-            iframe.style.opacity = '1';
-            iframe.style.visibility = 'visible';
-        }
-
-        /**
-         * Get appropriate error message for Facebook embedding failures
-         */
-        getFacebookErrorMessage(channel, fallbackUrl) {
-            // Check if user is likely logged into Facebook
-            const isLoggedIn = this.isLikelyLoggedIntoFacebook();
-
-            if (isLoggedIn) {
-                return `
-                    <div style="color: #4267B2; text-align: center; padding: 20px;">
-                        <div>📘 Stream temporarily unavailable</div>
-                        <div style="font-size: 12px; margin-top: 10px;">
-                            This Facebook live stream may be private or temporarily inaccessible.<br>
-                            Try opening <a href="${fallbackUrl}" target="_blank" style="color: #4267B2;">facebook.com/${channel}</a> in a new tab.
-                        </div>
-                    </div>
-                `;
-            } else {
-                return `
-                    <div style="color: #4267B2; text-align: center; padding: 20px;">
-                        <div>📘 Facebook login required</div>
-                        <div style="font-size: 12px; margin-top: 10px;">
-                            Facebook live streams require you to be logged in to view them.<br>
-                            Please log into Facebook and refresh this page, or open<br>
-                            <a href="${fallbackUrl}" target="_blank" style="color: #4267B2;">facebook.com/${channel}</a> in a new tab.
-                        </div>
-                    </div>
-                `;
-            }
-        }
-
-        /**
-         * Check if user is likely logged into Facebook
-         */
-        isLikelyLoggedIntoFacebook() {
-            // Check for Facebook cookies or local storage that indicate login
-            try {
-                // Check for common Facebook login indicators
-                const hasFbCookie = document.cookie.includes('c_user') || document.cookie.includes('xs');
-                const hasFbLocalStorage = localStorage.getItem('fb_logged_in') !== null;
-
-                // Check if we're on a Facebook page and not seeing login prompts
-                const isOnFacebook = window.location.hostname.includes('facebook.com');
-                const noLoginPrompts = !document.querySelector('[data-testid*="login"]') &&
-                                      !document.querySelector('[role="banner"]') || // Facebook header usually present when logged in
-                                      document.querySelector('[data-pagelet="Feed"]'); // Feed component present when logged in
-
-                return hasFbCookie || hasFbLocalStorage || (isOnFacebook && noLoginPrompts);
-            } catch (error) {
-                console.log('📘 Could not determine Facebook login status:', error);
-                return false;
-            }
-        }
 
         /**
          * Trigger pickle rain animation when first stream goes live
          */
         triggerPickleRain() {
-            console.log('🥒 PICKLE STORM! First stream detected - time to celebrate!');
+            console.log('🥒 THICK PICKLE INVASION! First stream detected - time to celebrate!');
 
-            const pickleEmojis = ['🥒', '🥒', '🥒', '🥒', '🥒', '🥒', '🥒', '🥒', '🥒', '🥒', '🥒', '🥒'];
-            const pickleClasses = ['dill', 'sweet', 'sour', 'gherkin', 'cucumber', 'jar'];
+            // Trigger only the MASSIVE thick pickle invasion!
+            this.triggerThickPickleInvasion();
 
-            // Create a massive pickle storm - 72 pickles total!
-            const totalPickles = 72;
-            const waves = 3; // 3 waves of pickles
-            const picklesPerWave = totalPickles / waves;
-
-            for (let wave = 0; wave < waves; wave++) {
-                for (let i = 0; i < picklesPerWave; i++) {
-                    setTimeout(() => {
-                        const pickle = document.createElement('div');
-                        pickle.className = `ksm-pickle-rain ${pickleClasses[i % pickleClasses.length]}`;
-
-                        // Use more variety in pickle emojis
-                        const emojiIndex = Math.floor(Math.random() * pickleEmojis.length);
-                        pickle.textContent = pickleEmojis[emojiIndex];
-
-                        // Distribute across the full width with more randomness
-                        const basePosition = (i / picklesPerWave) * 100; // Even distribution
-                        const randomOffset = (Math.random() - 0.5) * 200; // -100px to +100px variation
-                        pickle.style.left = `calc(${basePosition}% + ${randomOffset}px)`;
-
-                        // Add slight size variation for more chaos
-                        const sizeVariation = 0.8 + Math.random() * 0.4; // 0.8x to 1.2x scale
-                        pickle.style.fontSize = `${32 * sizeVariation}px`;
-
-                        document.body.appendChild(pickle);
-
-                        // Remove pickle after animation completes (6 seconds max for longer animation)
-                        setTimeout(() => {
-                            if (pickle.parentNode) {
-                                pickle.parentNode.removeChild(pickle);
-                            }
-                        }, 6000);
-                    }, wave * 800 + i * 100); // Stagger waves and individual drops
-                }
-            }
-
-            // Show a celebration message (disabled - just rain the pickles)
+            // Show a celebration message (disabled - just invasion the pickles)
             // this.showPickleRainNotification();
         }
+
+        /**
+         * Trigger MASSIVE thick pickle invasion from all sides!
+         */
+        triggerThickPickleInvasion() {
+            console.log('🥒 THICK PICKLE INVASION! REALLY THICK PICKLES ATTACKING FROM ALL SIDES!');
+
+            const thickPickleEmojis = ['🥒', '🥒', '🥒', '🥒', '🥒', '🥒'];
+            const invasionTypes = ['top-invasion', 'bottom-invasion', 'left-invasion', 'right-invasion'];
+
+            // Create invasion from all 4 sides - 8 massive pickles total!
+            const totalThickPickles = 8;
+            const picklesPerSide = totalThickPickles / invasionTypes.length;
+
+            invasionTypes.forEach((invasionType, sideIndex) => {
+                for (let i = 0; i < picklesPerSide; i++) {
+                    setTimeout(() => {
+                        const thickPickle = document.createElement('div');
+                        thickPickle.className = `ksm-thick-pickle ${invasionType}`;
+
+                        // Random thick pickle emoji
+                        const emojiIndex = Math.floor(Math.random() * thickPickleEmojis.length);
+                        thickPickle.textContent = thickPickleEmojis[emojiIndex];
+
+                        // Position based on invasion type
+                        if (invasionType === 'top-invasion' || invasionType === 'bottom-invasion') {
+                            // Horizontal positioning for top/bottom invasions
+                            const position = (i / picklesPerSide) * 100 + Math.random() * 20 - 10; // Add randomness
+                            thickPickle.style.left = `${position}%`;
+                        } else {
+                            // Vertical positioning for left/right invasions
+                            const position = (i / picklesPerSide) * 100 + Math.random() * 20 - 10; // Add randomness
+                            thickPickle.style.top = `${position}%`;
+                        }
+
+                        // Add to body immediately
+                        if (document.body) {
+                            document.body.appendChild(thickPickle);
+                        }
+
+                        // Remove thick pickle after animation completes (3.5 seconds)
+                        setTimeout(() => {
+                            if (thickPickle.parentNode) {
+                                thickPickle.parentNode.removeChild(thickPickle);
+                            }
+                        }, 3500);
+
+                    }, sideIndex * 200 + i * 300); // Stagger by side, then by pickle
+                }
+            });
+        }
+
 
         /**
          * Play sound notification when someone goes live
@@ -3941,33 +3456,21 @@
             const statusElement = document.getElementById('ksm-status');
             if (statusElement) {
                 const isOnKick = window.location.hostname.includes('kick.com');
-                const isOnFacebook = window.location.hostname.includes('facebook.com');
                 let statusText;
 
                 const totalStreams = this.getTotalLiveStreams();
                 const kickStreams = (this.liveStreams.get('kick') || new Set()).size;
-                const fbStreams = (this.liveStreams.get('facebook') || new Set()).size;
 
                 if (isOnKick) {
                     const status = this.monitoringInterval ? 'Monitoring Active' : 'Ready (click logo)';
                     statusText = `Status: ${status} | Live streams: ${totalStreams}`;
                     if (totalStreams > 0) {
-                        statusText += ` (Kick: ${kickStreams}, FB: ${fbStreams})`;
-                    }
-                } else if (isOnFacebook) {
-                    statusText = `Status: Facebook Page | Live streams: ${totalStreams}`;
-                    if (totalStreams > 0) {
-                        statusText += ` (Kick: ${kickStreams}, FB: ${fbStreams})`;
-                    }
-                    if (this.monitoringInterval) {
-                        statusText += ' | Monitoring active';
-                } else {
-                        statusText += ' | Click logo to start monitoring';
+                        statusText += ` (Kick: ${kickStreams})`;
                     }
                 } else {
                     statusText = `Status: Cross-site GUI | Live streams: ${totalStreams}`;
                     if (totalStreams > 0) {
-                        statusText += ` (Kick: ${kickStreams}, FB: ${fbStreams})`;
+                        statusText += ` (Kick: ${kickStreams})`;
                     }
                     if (this.monitoringInterval) {
                         statusText += ' | Monitoring active';
