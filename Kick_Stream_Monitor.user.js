@@ -17,6 +17,7 @@
 // @connect      web.kick.com
 // @connect      player.kick.com
 // @connect      raw.githubusercontent.com
+// @connect      https://raw.githubusercontent.com
 // @run-at       document-start
 // ==/UserScript==
 
@@ -216,8 +217,6 @@
             // Always create grid container for cross-site patrolling
             this.createGrid();
 
-            // Initialize resize functionality
-            this.initializeResize();
 
             // Fallback: Create simple logo if main GUI failed
             setTimeout(() => {
@@ -356,39 +355,79 @@
          */
         async fetchDefaultChannels() {
             return new Promise((resolve) => {
-                const channelsUrl = 'https://raw.githubusercontent.com/TheWhiteSasquatch/Pickles/master/channels.json';
+                const channelsUrl = 'https://raw.githubusercontent.com/TheWhiteSasquatch/Pickles/refs/heads/master/channels.json';
+
+                console.log('🥒 Attempting to fetch channels from GitHub:', channelsUrl);
+
+                // Check if GM_xmlhttpRequest is available
+                if (typeof GM_xmlhttpRequest === 'undefined') {
+                    console.warn('🥒 GM_xmlhttpRequest not available, falling back to fetch');
+                    // Fallback to regular fetch if GM_xmlhttpRequest isn't available
+                    fetch(channelsUrl)
+                        .then(response => {
+                            if (response.ok) {
+                                return response.json();
+                            } else {
+                                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                            }
+                        })
+                        .then(data => {
+                            if (data.monitoredChannels && Array.isArray(data.monitoredChannels)) {
+                                console.log('🥒 Fetched channels from GitHub (fallback fetch):', data.monitoredChannels);
+                                resolve(data.monitoredChannels);
+                            } else {
+                                console.warn('🥒 Invalid data structure from GitHub');
+                                resolve(this.getFallbackChannels());
+                            }
+                        })
+                        .catch(error => {
+                            console.warn('🥒 Fetch fallback failed:', error.message);
+                            resolve(this.getFallbackChannels());
+                        });
+                    return;
+                }
 
                 GM_xmlhttpRequest({
                     method: 'GET',
                     url: channelsUrl,
-                    timeout: 5000,
+                    timeout: 10000, // Increased timeout
+                    headers: {
+                        'Accept': 'application/json',
+                        'User-Agent': 'Mozilla/5.0 (compatible; PicklePatrol/1.0)'
+                    },
                     onload: (response) => {
+                        console.log('🥒 GM_xmlhttpRequest onload, status:', response.status);
                         try {
                             if (response.status === 200) {
                                 const data = JSON.parse(response.responseText);
                                 if (data.monitoredChannels && Array.isArray(data.monitoredChannels)) {
-                                    console.log('🥒 Fetched channels from GitHub:', data.monitoredChannels);
+                                    console.log('🥒 Successfully fetched channels from GitHub:', data.monitoredChannels.length, 'channels');
                                     resolve(data.monitoredChannels);
                                     return;
+                                } else {
+                                    console.warn('🥒 GitHub response missing monitoredChannels array');
                                 }
+                            } else {
+                                console.warn('🥒 GitHub returned non-200 status:', response.status, response.statusText);
                             }
                         } catch (error) {
-                            console.warn('🥒 Error parsing channels JSON:', error);
+                            console.warn('🥒 Error parsing GitHub response:', error);
                         }
                         // Fallback to hardcoded list
-                        console.log('🥒 Using fallback hardcoded channels');
+                        console.log('🥒 Falling back to hardcoded channels');
                         resolve(this.getFallbackChannels());
                     },
                     onerror: (error) => {
-                        console.warn('🥒 Failed to fetch channels from GitHub:', {
+                        console.error('🥒 GM_xmlhttpRequest onerror:', {
                             status: error.status,
                             statusText: error.statusText,
-                            url: channelsUrl
+                            url: channelsUrl,
+                            error: error
                         });
                         resolve(this.getFallbackChannels());
                     },
                     ontimeout: () => {
-                        console.warn('🥒 Timeout fetching channels from GitHub (check @connect permissions)');
+                        console.warn('🥒 GM_xmlhttpRequest timeout after 10s - check @connect permissions and network');
                         resolve(this.getFallbackChannels());
                     }
                 });
@@ -406,7 +445,17 @@
                 'ppillinois',
                 'bikersagainstpredators',
                 'opp_oklahoma',
-                'pplongisland'
+                'pplongisland',
+                'asmongold',
+                'shortbus122',
+                'smokenscanog',
+                'thejourneyland',
+                'ryangarcia',
+                'bigbadwolf83',
+                'coloradopedpatrol',
+                'arizonapredatorprevention',
+                'adinross',
+                'ninadrama'
             ];
         }
 
@@ -419,12 +468,18 @@
             let kickChannels = fallbackChannels;
 
             // Try to fetch updated channels from GitHub
+            console.log('🥒 Starting GitHub channel fetch...');
             try {
                 const githubChannels = await this.fetchDefaultChannels();
-                kickChannels = githubChannels;
-                console.log('🥒 Loaded channels from GitHub:', githubChannels);
+                if (githubChannels && githubChannels.length > fallbackChannels.length) {
+                    kickChannels = githubChannels;
+                    console.log('🥒 ✅ Successfully loaded', githubChannels.length, 'channels from GitHub');
+                } else {
+                    console.log('🥒 GitHub channels not better than fallback, using fallback');
+                }
             } catch (error) {
-                console.warn('🥒 Failed to load GitHub channels, using fallback');
+                console.error('🥒 ❌ Failed to load GitHub channels:', error);
+                console.log('🥒 Using fallback channels');
             }
 
             const defaultConfig = {
@@ -546,12 +601,15 @@
                     font-family: 'Comic Sans MS', cursive, Arial, sans-serif !important;
                     font-size: 14px !important;
                     text-align: center !important;
-                    display: flex !important;
-                    flex-direction: column !important;
-                    align-items: center !important;
                     pointer-events: auto !important;
                     opacity: 1 !important;
                     visibility: visible !important;
+                    /* Fixed width to prevent stretching */
+                    width: 60px !important;
+                    /* Use flex but prevent expansion */
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center !important;
                 }
 
                 .ksm-logo {
@@ -591,6 +649,8 @@
                     display: flex;
                     flex-direction: column;
                     align-items: center;
+                    /* Prevent buttons from stretching container */
+                    position: relative;
                 }
 
                 .ksm-logo:hover {
@@ -626,11 +686,13 @@
 
                 .ksm-panel {
                     display: none;
+                    position: absolute !important;
+                    top: 70px !important; /* Position below the logo/buttons */
+                    right: 0 !important;
                     background: linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(30, 30, 30, 0.95));
                     color: white;
                     padding: 15px;
                     border-radius: 15px;
-                    margin-top: 10px;
                     min-width: 320px;
                     max-width: 380px;
                     max-height: 70vh;
@@ -638,6 +700,7 @@
                     box-shadow: 0 8px 25px rgba(83, 252, 24, 0.2);
                     border: 3px solid #53fc18;
                     backdrop-filter: blur(10px);
+                    z-index: 10001 !important; /* Higher than container */
                 }
 
                 .ksm-panel.show {
@@ -793,37 +856,7 @@
                     min-height: 100vh;
                 }
 
-                .ksm-grid-container::after {
-                    content: '';
-                    position: absolute;
-                    bottom: 0;
-                    right: 0;
-                    width: 20px;
-                    height: 20px;
-                    background: linear-gradient(-45deg, transparent 0%, transparent 40%, #4CAF50 40%, #4CAF50 60%, transparent 60%);
-                    cursor: nw-resize;
-                    pointer-events: auto;
-                    z-index: 10000;
-                }
 
-                .ksm-grid-container::before {
-                    content: '';
-                    position: absolute;
-                    top: 0;
-                    right: 0;
-                    bottom: 20px; /* Leave space for corner handle */
-                    width: 8px;
-                    background: linear-gradient(90deg, transparent 0%, rgba(76, 175, 80, 0.3) 50%, transparent 100%);
-                    cursor: ew-resize;
-                    pointer-events: auto;
-                    z-index: 10000;
-                    opacity: 0;
-                    transition: opacity 0.2s ease;
-                }
-
-                .ksm-grid-container:hover::before {
-                    opacity: 1;
-                }
 
                 .ksm-grid-container.active {
                     display: block;
@@ -880,6 +913,50 @@
                     transform: rotate(2deg);
                     z-index: 1000;
                     cursor: grabbing;
+                }
+
+                /* Individual stream resize handles */
+                .ksm-stream-container::after {
+                    content: '↗';
+                    position: absolute;
+                    bottom: 0;
+                    right: 0;
+                    width: 25px;
+                    height: 25px;
+                    background: linear-gradient(-45deg, transparent 0%, transparent 25%, #4CAF50 25%, #4CAF50 75%, transparent 75%);
+                    border: 2px solid #4CAF50;
+                    border-top: none;
+                    border-left: none;
+                    cursor: nw-resize;
+                    pointer-events: auto;
+                    z-index: 1000;
+                    opacity: 0.7;
+                    transition: all 0.2s ease;
+                    font-size: 12px;
+                    color: white;
+                    display: flex;
+                    align-items: flex-end;
+                    justify-content: flex-end;
+                    padding: 1px;
+                    font-weight: bold;
+                    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+                }
+
+                .ksm-stream-container:hover::after {
+                    opacity: 1;
+                    background: linear-gradient(-45deg, transparent 0%, transparent 20%, #66BB6A 20%, #66BB6A 80%, transparent 80%);
+                    border-color: #66BB6A;
+                }
+
+                .ksm-stream-container.resizing {
+                    opacity: 0.9;
+                    z-index: 1001;
+                }
+
+                .ksm-stream-container.resizing::after {
+                    opacity: 1;
+                    background: linear-gradient(-45deg, transparent 0%, transparent 15%, #FF9800 15%, #FF9800 85%, transparent 85%);
+                    border-color: #FF9800;
                 }
 
                 .ksm-stream-header {
@@ -1536,9 +1613,9 @@
                 gridContainer.style.width = `${this.config.gridWidth}px`;
                 gridContainer.style.height = `${this.config.gridHeight}px`;
             } else {
-                // Default to compact size to not waste vertical space
-                gridContainer.style.width = `800px`;
-                gridContainer.style.height = `400px`; // More compact default
+                // Default to a more visible size so users can see the resize handle
+                gridContainer.style.width = `1000px`;
+                gridContainer.style.height = `600px`; // Larger default so resize handle is visible
             }
 
             const grid = document.createElement('div');
@@ -3015,6 +3092,12 @@
 
                 // Initialize drag functionality
                 this.initializeStreamDragging(container, channel);
+
+                // Initialize resize functionality
+                this.initializeStreamResizing(container, channel);
+
+                // Restore saved size if available
+                this.restoreStreamSize(channel);
             } else {
                 console.error(`Grid not available for ${channel}`);
             }
@@ -3038,14 +3121,24 @@
                     return;
                 }
 
+                // Check if clicking on resize handle - if so, don't start dragging
+                const containerRect = container.getBoundingClientRect();
+                const clickX = e.clientX;
+                const clickY = e.clientY;
+                const isOnResizeHandle = clickX >= containerRect.right - 25 && clickX <= containerRect.right &&
+                                        clickY >= containerRect.bottom - 25 && clickY <= containerRect.bottom;
+                if (isOnResizeHandle) {
+                    return; // Let the resize handler take care of this
+                }
+
                 isDragging = true;
                 dragStartTime = Date.now();
                 startX = e.clientX;
                 startY = e.clientY;
 
-                const rect = container.getBoundingClientRect();
-                initialLeft = rect.left;
-                initialTop = rect.top;
+                const dragRect = container.getBoundingClientRect();
+                initialLeft = dragRect.left;
+                initialTop = dragRect.top;
 
                 container.classList.add('dragging');
                 container.style.zIndex = '1000';
@@ -3093,6 +3186,109 @@
                     this.saveStreamPosition(channel);
                 }
             });
+        }
+
+        /**
+         * Initialize resize functionality for a stream container
+         */
+        initializeStreamResizing(container, channel) {
+            let isResizing = false;
+            let startX, startY, startWidth, startHeight;
+
+            // Mouse down event - start resizing
+            container.addEventListener('mousedown', (e) => {
+                // Check if clicking on the resize handle (bottom-right corner)
+                const rect = container.getBoundingClientRect();
+                const clickX = e.clientX;
+                const clickY = e.clientY;
+
+                // Check if click is within the resize handle area (bottom-right 25x25px)
+                const isOnResizeHandle = clickX >= rect.right - 25 && clickX <= rect.right &&
+                                        clickY >= rect.bottom - 25 && clickY <= rect.bottom;
+
+                if (!isOnResizeHandle) return;
+
+                console.log('🥒 Starting stream resize for', channel);
+
+                isResizing = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                startWidth = rect.width;
+                startHeight = rect.height;
+
+                container.classList.add('resizing');
+
+                // Prevent text selection during resize
+                document.body.style.userSelect = 'none';
+                document.body.style.cursor = 'nw-resize';
+
+                e.preventDefault();
+                e.stopPropagation();
+            });
+
+            // Mouse move event - handle resizing
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+
+                const newWidth = Math.max(280, startWidth + deltaX); // Minimum width of 280px
+                const newHeight = Math.max(200, startHeight + deltaY); // Minimum height of 200px
+
+                container.style.width = `${newWidth}px`;
+                container.style.height = `${newHeight}px`;
+
+                // Update layout if needed
+                this.updateGridLayout();
+            });
+
+            // Mouse up event - stop resizing
+            document.addEventListener('mouseup', () => {
+                if (!isResizing) return;
+
+                console.log('🥒 Ending stream resize for', channel);
+
+                isResizing = false;
+                container.classList.remove('resizing');
+                document.body.style.userSelect = '';
+                document.body.style.cursor = '';
+
+                // Save new size
+                const rect = container.getBoundingClientRect();
+                this.saveStreamSize(channel, rect.width, rect.height);
+            });
+        }
+
+        /**
+         * Save the size of a stream container
+         */
+        saveStreamSize(channel, width, height) {
+            if (!this.config.streamSizes) {
+                this.config.streamSizes = {};
+            }
+            this.config.streamSizes[channel] = { width, height };
+            this.saveConfig();
+            console.log(`🥒 Saved size for ${channel}:`, { width, height });
+        }
+
+        /**
+         * Restore the size of a stream container
+         */
+        restoreStreamSize(channel) {
+            if (!this.config.streamSizes || !this.config.streamSizes[channel]) {
+                return false;
+            }
+
+            const container = this.streamContainers.get(channel);
+            if (!container) return false;
+
+            const { width, height } = this.config.streamSizes[channel];
+            container.style.width = `${width}px`;
+            container.style.height = `${height}px`;
+
+            console.log(`🥒 Restored size for ${channel}:`, { width, height });
+            return true;
         }
 
         /**
@@ -3342,60 +3538,6 @@
             });
         }
 
-        /**
-         * Initialize resize functionality for the grid
-         */
-        initializeResize() {
-            if (!this.grid || !this.grid.container) return;
-
-            const container = this.grid.container;
-
-            // Add resize event listener
-            container.addEventListener('resize', (e) => {
-                // Update grid layout when container is resized
-                if (this.streamContainers.size > 0) {
-                    this.updateGridLayout();
-                }
-
-                // Check if grid overlaps with GUI button and reposition if needed
-                this.updateGUIPosition();
-
-                // Save new size to config
-                const rect = container.getBoundingClientRect();
-                this.config.gridWidth = rect.width;
-                this.config.gridHeight = rect.height;
-                this.saveConfig();
-            });
-
-            // Enable pointer events on the grid container when active
-            const observer = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
-                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                        const hasActiveClass = container.classList.contains('active');
-                        container.style.pointerEvents = hasActiveClass ? 'auto' : 'none';
-                    }
-                });
-            });
-
-            observer.observe(container, {
-                attributes: true,
-                attributeFilter: ['class']
-            });
-
-            // Add click-outside-to-hide functionality
-            document.addEventListener('click', (e) => {
-                if (this.grid && this.grid.container &&
-                    this.grid.container.classList.contains('active') &&
-                    !this.grid.container.contains(e.target) &&
-                    (!this.gui || !this.gui.container || !this.gui.container.contains(e.target))) {
-                    // Click was outside grid and GUI - hide the grid
-                    this.toggleGrid(false);
-                    console.log('🥒 Grid hidden - clicked outside');
-                }
-            });
-
-            console.log('🥒 Grid resize functionality initialized');
-        }
 
         /**
          * Load stream content (player and chat)
