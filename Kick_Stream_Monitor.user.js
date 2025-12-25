@@ -483,9 +483,7 @@
                 pollInterval: 300000, // 5 minutes
                 maxRetries: 3,
                 retryDelay: 5000, // 5 seconds
-                gridColumns: 2,
                 gridRows: 2,
-                maxStreams: 2, // Suggested default (2 streams), no actual limit
                 showChat: true,
                 theme: 'dark',
                 soundEnabled: false,
@@ -612,10 +610,6 @@
                     opacity: 0.8;
                 }
 
-                .ksm-logo:hover {
-                    opacity: 1;
-                    transform: scale(1.1);
-                }
 
                 .ksm-container.dragging {
                     opacity: 0.8 !important;
@@ -809,24 +803,6 @@
                     font-size: 13px;
                 }
 
-                .ksm-grid-preview {
-                    display: grid;
-                    gap: 4px;
-                    margin-top: 8px;
-                    padding: 8px;
-                    background: #111;
-                    border-radius: 4px;
-                }
-
-                .ksm-grid-cell {
-                    background: #333;
-                    border-radius: 2px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 10px;
-                    color: #999;
-                }
 
                 /* Grid and Stream Containers */
                 .ksm-grid-container {
@@ -1356,26 +1332,11 @@
             gridSection.className = 'ksm-section';
             gridSection.innerHTML = `
                 <h3>🥒 Pickle Grid Settings</h3>
-                <div class="ksm-input-group">
-                    <label for="ksm-max-streams">Suggested Streams:</label>
-                    <input type="number" id="ksm-max-streams" min="1" value="${this.config.maxStreams}">
-                </div>
-                <div class="ksm-input-group">
-                    <label for="ksm-columns">Grid Columns:</label>
-                    <input type="number" id="ksm-columns" min="1" max="4" value="${this.config.gridColumns}">
-                </div>
                 <label class="ksm-toggle">
                     <input type="checkbox" id="ksm-show-chat" ${this.config.showChat ? 'checked' : ''}>
                     Show Chat
                 </label>
             `;
-
-            // Add grid preview
-            const gridPreview = document.createElement('div');
-            gridPreview.className = 'ksm-grid-preview';
-            gridPreview.id = 'ksm-grid-preview';
-            this.updateGridPreview(gridPreview);
-            gridSection.appendChild(gridPreview);
 
             // Channel management section
             const channelSection = document.createElement('div');
@@ -1453,6 +1414,7 @@
             actionsSection.innerHTML = `
                 <h3>🥒 Pickle Actions</h3>
                 <button id="ksm-clear-all" class="ksm-button danger" style="width: 100%;">🗑️ Clear All Pickles</button>
+                <button id="ksm-reset-grid" class="ksm-button" style="width: 100%; margin-top: 8px;">🔄 Reset Grid Settings</button>
             `;
 
             // Help section
@@ -1464,6 +1426,7 @@
                     <div><b>Ctrl+Shift+K:</b> Toggle pickle settings panel</div>
                     <div><b>Ctrl+Shift+G:</b> Toggle pickle stream grid</div>
                     <div><b>Ctrl+Shift+X:</b> Clear all pickles</div>
+                    <div><b>Ctrl+Shift+R:</b> Reset grid settings</div>
                     <div><b>Escape:</b> Close panel/pickle grid</div>
                 </div>
                 <div style="margin-top: 8px; font-size: 11px; color: #888;">
@@ -1787,26 +1750,6 @@
                 }
             };
 
-            // Grid settings
-            const maxStreamsInput = panel.querySelector('#ksm-max-streams');
-            maxStreamsInput.onchange = (e) => {
-                const value = parseInt(e.target.value);
-                if (value >= 1) {
-                    this.config.maxStreams = value;
-                    this.saveConfig();
-                    this.updateGridPreview();
-                }
-            };
-
-            const columnsInput = panel.querySelector('#ksm-columns');
-            columnsInput.onchange = (e) => {
-                const value = parseInt(e.target.value);
-                if (value >= 1 && value <= 4) {
-                    this.config.gridColumns = value;
-                    this.saveConfig();
-                    this.updateGridPreview();
-                }
-            };
 
             const showChatToggle = panel.querySelector('#ksm-show-chat');
             showChatToggle.onchange = (e) => {
@@ -1833,6 +1776,13 @@
             clearAllBtn.onclick = () => {
                 if (confirm('Remove all active streams?')) {
                     this.clearAllStreams();
+                }
+            };
+
+            const resetGridBtn = panel.querySelector('#ksm-reset-grid');
+            resetGridBtn.onclick = () => {
+                if (confirm('Reset grid position, size, and settings to defaults?')) {
+                    this.resetGridSettings();
                 }
             };
 
@@ -1961,26 +1911,6 @@
             this.updateKickChannelList();
         }
 
-        /**
-         * Update the grid preview
-         */
-        updateGridPreview() {
-            const preview = document.getElementById('ksm-grid-preview');
-            if (!preview) return;
-
-            const columns = this.config.gridColumns;
-            const maxStreams = this.config.maxStreams;
-
-            preview.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
-            preview.innerHTML = '';
-
-            for (let i = 0; i < Math.min(maxStreams, 8); i++) { // Show max 8 in preview
-                const cell = document.createElement('div');
-                cell.className = 'ksm-grid-cell';
-                cell.textContent = `Stream ${i + 1}`;
-                preview.appendChild(cell);
-            }
-        }
 
 
         /**
@@ -2025,6 +1955,48 @@
         }
 
         /**
+         * Reset grid settings to defaults
+         */
+        resetGridSettings() {
+            // Reset grid-related config settings
+            this.config.gridWidth = null;
+            this.config.gridHeight = null;
+            this.config.gridLeft = undefined;
+            this.config.gridTop = undefined;
+            this.config.gridRows = 2; // Reset to default
+
+            // Clear any saved stream positions and sizes
+            if (this.config.streamPositions) {
+                delete this.config.streamPositions;
+            }
+            if (this.config.streamSizes) {
+                delete this.config.streamSizes;
+            }
+
+            // Save the reset config
+            this.saveConfig();
+
+            // If grid is currently open, recreate it with default settings
+            if (this.grid && this.grid.container) {
+                const wasActive = this.grid.container.classList.contains('active');
+                this.grid.container.remove();
+                this.grid = null;
+
+                // Recreate grid if it was active
+                if (wasActive) {
+                    this.createGrid();
+                    this.toggleGrid(true);
+                }
+            }
+
+            // Update the settings preview
+            this.updateGridPreview();
+
+            this.showNotification('Grid Reset', 'Grid settings have been reset to defaults');
+            console.log('🥒 Grid settings reset to defaults');
+        }
+
+        /**
          * Set up keyboard shortcuts
          */
         setupKeyboardShortcuts() {
@@ -2053,6 +2025,15 @@
                     e.preventDefault();
                     if (confirm('Remove all active streams?')) {
                         this.clearAllStreams();
+                    }
+                    return;
+                }
+
+                // Ctrl+Shift+R: Reset grid settings
+                if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+                    e.preventDefault();
+                    if (confirm('Reset grid position, size, and settings to defaults?')) {
+                        this.resetGridSettings();
                     }
                     return;
                 }
@@ -2207,7 +2188,7 @@
             console.log('🥒 === DEBUG CONFIG ===');
             console.log('Current config:', this.config);
             console.log('Stored values:');
-            for (const [key, defaultValue] of Object.entries(DEFAULT_CONFIG)) {
+            for (const [key, defaultValue] of Object.entries(defaultConfig)) {
                 const stored = GM_getValue(key);
                 console.log(`  ${key}:`, stored);
             }
