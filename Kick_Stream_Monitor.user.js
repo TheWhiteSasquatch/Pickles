@@ -491,6 +491,7 @@
                 gridHeight: null, // Auto-sized initially
                 streamPositions: {}, // Saved positions for individual streams
                 lastMonitoringEnabled: null, // Timestamp when monitoring was last enabled
+                excludedWebsites: [], // Array of domain names where grid should not auto-start
                 // Platform support
                 platforms: {
                     kick: {
@@ -1434,6 +1435,25 @@
                 </div>
             `;
 
+            // Exclusion section
+            const exclusionSection = document.createElement('div');
+            exclusionSection.className = 'ksm-section';
+            exclusionSection.innerHTML = `
+                <h3>🚫 Exclude Sites</h3>
+                <p style="font-size: 12px; color: #ccc; margin: 5px 0 10px 0;">Grid won't auto-start on these websites</p>
+                <div class="ksm-input-group" style="margin-bottom: 10px;">
+                    <input type="text" id="ksm-exclude-input" placeholder="example.com" style="flex: 1; margin-right: 8px;">
+                    <button id="ksm-add-exclude" class="ksm-button" style="padding: 4px 8px;">Add Site</button>
+                </div>
+                <button id="ksm-exclude-current" class="ksm-button" style="width: 100%; margin-bottom: 10px;">
+                    ${this.config.excludedWebsites && this.config.excludedWebsites.includes(window.location.hostname.toLowerCase()) ?
+                        '✅ This Site Is Excluded' : '🚫 Exclude This Site'} (${window.location.hostname})
+                </button>
+                <div id="ksm-excluded-list" class="ksm-channel-list" style="max-height: 150px; overflow-y: auto;">
+                    ${this.renderExcludedSites()}
+                </div>
+            `;
+
             // Theme section
             const themeSection = document.createElement('div');
             themeSection.className = 'ksm-section';
@@ -1455,6 +1475,7 @@
             panel.appendChild(platformSection);
             panel.appendChild(gridSection);
             panel.appendChild(channelSection);
+            panel.appendChild(exclusionSection);
             panel.appendChild(actionsSection);
             panel.appendChild(themeSection);
             panel.appendChild(helpSection);
@@ -1793,6 +1814,39 @@
                 this.saveConfig();
                 this.applyTheme();
             };
+
+            // Exclusion settings
+            const excludeInput = panel.querySelector('#ksm-exclude-input');
+            const addExcludeBtn = panel.querySelector('#ksm-add-exclude');
+            const excludeCurrentBtn = panel.querySelector('#ksm-exclude-current');
+
+            addExcludeBtn.onclick = () => {
+                const site = excludeInput.value.trim().toLowerCase();
+                if (site) {
+                    this.addExcludedSite(site);
+                    excludeInput.value = '';
+                }
+            };
+
+            excludeInput.onkeypress = (e) => {
+                if (e.key === 'Enter') {
+                    addExcludeBtn.click();
+                }
+            };
+
+            excludeCurrentBtn.onclick = () => {
+                const currentSite = window.location.hostname.toLowerCase();
+                this.addExcludedSite(currentSite);
+            };
+
+            // Handle remove buttons for excluded sites (event delegation)
+            const excludedList = panel.querySelector('#ksm-excluded-list');
+            excludedList.onclick = (e) => {
+                if (e.target.classList.contains('ksm-remove-excluded')) {
+                    const site = e.target.dataset.site;
+                    this.removeExcludedSite(site);
+                }
+            };
         }
 
         /**
@@ -1854,6 +1908,90 @@
                 item.appendChild(viewBtn);
                 liveChannelList.appendChild(item);
             });
+        }
+
+        /**
+         * Render the excluded websites list as HTML
+         */
+        renderExcludedSites() {
+            if (!this.config.excludedWebsites || this.config.excludedWebsites.length === 0) {
+                return '<div style="padding: 8px; color: #666; font-style: italic;">No excluded sites</div>';
+            }
+
+            return this.config.excludedWebsites.map(site => `
+                <div class="ksm-channel-item" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="ksm-channel-name">${site}</span>
+                    <button class="ksm-remove-excluded" data-site="${site}" style="background: #ff4757; color: white; border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 11px;">×</button>
+                </div>
+            `).join('');
+        }
+
+        /**
+         * Add a website to the exclusion list
+         */
+        addExcludedSite(site) {
+            if (!this.config.excludedWebsites) {
+                this.config.excludedWebsites = [];
+            }
+
+            // Normalize domain (remove www. prefix, convert to lowercase)
+            let normalizedSite = site.toLowerCase().trim();
+
+            // Remove protocol if present
+            normalizedSite = normalizedSite.replace(/^https?:\/\//, '');
+
+            // Remove www. prefix
+            normalizedSite = normalizedSite.replace(/^www\./, '');
+
+            // Remove path/query/fragment if present
+            normalizedSite = normalizedSite.split('/')[0];
+
+            // Basic domain validation
+            if (!normalizedSite || !normalizedSite.includes('.') || normalizedSite.length < 4) {
+                console.warn('🥒 Invalid domain format:', site);
+                return;
+            }
+
+            if (!this.config.excludedWebsites.includes(normalizedSite)) {
+                this.config.excludedWebsites.push(normalizedSite);
+                this.config.excludedWebsites.sort(); // Keep list sorted
+                this.saveConfig();
+                this.updateExcludedSitesList();
+                console.log('🥒 Added to exclusion list:', normalizedSite);
+            } else {
+                console.log('🥒 Site already in exclusion list:', normalizedSite);
+            }
+        }
+
+        /**
+         * Remove a website from the exclusion list
+         */
+        removeExcludedSite(site) {
+            if (!this.config.excludedWebsites) return;
+
+            this.config.excludedWebsites = this.config.excludedWebsites.filter(s => s !== site);
+            this.saveConfig();
+            this.updateExcludedSitesList();
+            console.log('🥒 Removed from exclusion list:', site);
+        }
+
+        /**
+         * Update the excluded sites list display
+         */
+        updateExcludedSitesList() {
+            const excludedList = document.getElementById('ksm-excluded-list');
+            if (excludedList) {
+                excludedList.innerHTML = this.renderExcludedSites();
+            }
+
+            // Update the "exclude current site" button text
+            const excludeCurrentBtn = document.getElementById('ksm-exclude-current');
+            if (excludeCurrentBtn) {
+                const currentDomain = window.location.hostname.toLowerCase();
+                const isExcluded = this.config.excludedWebsites && this.config.excludedWebsites.includes(currentDomain);
+                excludeCurrentBtn.innerHTML = `${isExcluded ? '✅ This Site Is Excluded' : '🚫 Exclude This Site'} (${window.location.hostname})`;
+                excludeCurrentBtn.disabled = isExcluded;
+            }
         }
 
         /**
@@ -3117,6 +3255,21 @@
             const now = Date.now();
             const timeSinceLastEnabled = now - this.config.lastMonitoringEnabled;
             const thirtyMinutes = 30 * 60 * 1000; // 30 minutes in milliseconds
+
+            // Check if current domain is excluded from auto-start
+            const currentDomain = window.location.hostname.toLowerCase();
+            if (this.config.excludedWebsites && this.config.excludedWebsites.length > 0) {
+                // Check if current domain or its base domain is excluded
+                const isExcluded = this.config.excludedWebsites.some(excludedSite => {
+                    return currentDomain === excludedSite ||
+                           currentDomain.endsWith('.' + excludedSite);
+                });
+
+                if (isExcluded) {
+                    console.log('🥒 Auto-start blocked - current site is in exclusion list:', currentDomain);
+                    return false; // Don't auto-start on excluded websites
+                }
+            }
 
             return timeSinceLastEnabled <= thirtyMinutes;
         }
